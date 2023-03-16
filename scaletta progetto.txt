@@ -1,0 +1,32 @@
+LUI VUOLE STORYTELLING
+
+# INTRODUZIONE
+- Obiettivo della ricerca
+- Quale interesse motiva la ricerca
+	- Diminuzione costo rinnovabili (su OWD)
+	- Aumento delle emissioni e cambiamenti climatici (su OWD)
+# OBIETTIVO
+Studiare quali variabili correlano alla produzione di energia da rinnovabili, in generale e per tipo di rinnovabile
+- Produzione di energia elettrica in TwH per tipo di rinnovabile, per anno e per paese
+- Disponibilità di risorse fossili (anche uranio o simili), per paese e per tipo di risorsa fossile (se disponibile, altrimenti estrazione annuale o stoccaggio annuale)
+- Superficie di territorio destinata all'agricoltura, per anno e per paese (questo serve per correlare alle biomasse)
+- Forza del vento media per paese (se disponibile, eventualmente differenziate tra onshore ed offshore)
+- Superficie del paese coperta da bacini idrici
+- Vedere se troviamo qualcosa per il geotermico
+- Ore di sole medie per paese
+- Irraggiamento solare medio
+- Latitudine e longitudine media per paese
+- Superficie per paese
+- Popolazione per paese
+- GDP
+- HDI
+- Air pollution
+- Infrastructure project expenditure, o ancora meglio stima della spesa per transizione ecologica per paese
+- Urbanizzazione
+
+# SOTTO-OBIETTIVI
+1) Presentare dei case study specifici su paesi interessanti per certi motivi
+2) Studiare com'è il consumo di elettricità e di energia totale in relazione a produzione di rinnovabili (ratio) (motivazione: osservare se una maggiore produzione di energia rinnovabile implica un minor utilizzo di energie fossili).
+- Consumo di elettricità totale del paese
+- Consumo di primary energy
+- Consumo di entrambe queste cose, divise per fonti non rinnovabili
