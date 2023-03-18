@@ -27,6 +27,7 @@ Studiare quali variabili correlano alla produzione di energia da rinnovabili, in
 # SOTTO-OBIETTIVI
 1) Presentare dei case study specifici su paesi interessanti per certi motivi
 2) Studiare com'è il consumo di elettricità e di energia totale in relazione a produzione di rinnovabili (ratio) (motivazione: osservare se una maggiore produzione di energia rinnovabile implica un minor utilizzo di energie fossili).
-- Consumo di elettricità totale del paese
-- Consumo di primary energy
-- Consumo di entrambe queste cose, divise per fonti non rinnovabili
+- Consumo di elettricità totale del paese (*)
+- Generazione di elettricità totale del paese (*)
+- Consumo di primary energy (*)
+- Consumo di primary energy ed elettricità, divise per fonti non rinnovabili (*)
