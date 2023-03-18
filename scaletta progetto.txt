@@ -15,7 +15,6 @@ Studiare quali variabili correlano alla produzione di energia da rinnovabili, in
 - Vedere se troviamo qualcosa per il geotermico
 - Ore di sole medie per paese
 - Irraggiamento solare medio
-- Latitudine e longitudine media per paese
 - Superficie per paese (*)
 - Popolazione per paese (*)
 - GDP (*) (https://databank.worldbank.org/source/world-development-indicators#)
