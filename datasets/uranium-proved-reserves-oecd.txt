@@ -1,0 +1,60 @@
+ Country	Continent	Reserves as of 2019 (tonnes)	Historical Production to 2014
+ Algeria	Africa	19,500	0
+ Argentina	Latin America	39,800	2,582
+ Australia	Oceania	2,049,400	194,646
+ Belgium	Europe	0	686
+ Botswana	Africa	87,200	0
+ Brazil	Latin America	276,800	4,172
+ Bulgaria	Europe	0	16,364
+ Canada	North America	873,000	483,957
+ Central African Republic	Africa	32,000	0
+ Chad	Africa	2,400	0
+ Chile	Latin America	1,400	0
+ China	Asia	269,700	39,849
+ Democratic Republic of the Congo	Africa	2,700	25,600
+ Czech Republic	Europe	119,200	111,765
+ Egypt	Africa	1,900	0
+ Finland	Europe	1,200	30
+ France	Europe	0	76,006
+ Gabon	Africa	5,800	25,403
+ Germany	Europe	7,000	219,686
+ Greece	Europe	7,000	0
+ Denmark ( Greenland)	Europe	114,000	0
+ Hungary	Europe	13,500	21,067
+ India	Asia	129,000	11,398
+ Indonesia	Asia	8,400	0
+ Iran	Asia	7,500	0
+ Italy	Europe	6,100	0
+ Japan	Asia	6,600	84
+ Jordan	Asia	52,500	0
+ Kazakhstan	Asia	969,200	244,707
+ Madagascar	Africa	0	785
+ Malawi	Africa	14,300	4,217
+ Mali	Africa	8,900	0
+ Mauritania	Africa	24,500	0
+ Mexico	Latin America	5,000	49
+ Mongolia	Asia	143,500	535
+ Namibia	Africa	504,200	120,418
+ Niger	Africa	439,400	132,017
+ Pakistan	Asia	0	1,439
+ Paraguay	Latin America	3,600	
+ Peru	Latin America	33,400	0
+ Poland	Europe	0	650
+ Portugal	Europe	7,000	3,720
+ Romania	Europe	6,600	18,899
+ Russia	Asia/Europe	661,900	158,844
+ Senegal	Africa	1,100	
+ Slovakia	Europe	15,500	211
+ Slovenia	Europe	9,200	382
+ Somalia	Africa	7,600	0
+ South Africa	Africa	447,700	159,510
+ Spain	Europe	28,500	8,028
+ Sweden	Europe	9,600	200
+ Tanzania	Africa	58,200	0
+ Turkey	Asia/Europe	13,600	0
+ Ukraine	Europe	186,900	129,804
+ United States	North America	101,900	373,075
+ Uzbekistan	Asia	132,300	127,591
+ Vietnam	Asia	3,900	0
+ Zambia	Africa	31,000	86
+ Zimbabwe	Africa	1,400	0
