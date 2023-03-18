@@ -16,13 +16,13 @@ Studiare quali variabili correlano alla produzione di energia da rinnovabili, in
 - Ore di sole medie per paese
 - Irraggiamento solare medio
 - Latitudine e longitudine media per paese
-- Superficie per paese
-- Popolazione per paese
-- GDP
-- HDI
-- Air pollution
-- Infrastructure project expenditure, o ancora meglio stima della spesa per transizione ecologica per paese
-- Urbanizzazione
+- Superficie per paese (*)
+- Popolazione per paese (*)
+- GDP (*) (https://databank.worldbank.org/source/world-development-indicators#)
+- HDI (*)
+- Air pollution (*)
+- Infrastructure spending (*) (https://databank.worldbank.org/source/world-development-indicators#)
+- Urbanizzazione (*)
 
 # SOTTO-OBIETTIVI
 1) Presentare dei case study specifici su paesi interessanti per certi motivi
