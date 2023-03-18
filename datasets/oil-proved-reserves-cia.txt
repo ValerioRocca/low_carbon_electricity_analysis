@@ -33,7 +33,7 @@
 33	Argentina	     2,820,000,000
 34	Colombia	     2,417,000,000
 35	Syria	     2,183,000,000
-36	Congo, Republic of the	     1,600,000,000
+36	Congo	     1,600,000,000
 37	Chad	     1,500,000,000
 38	Australia	     1,426,000,000
 39	Gabon	     1,309,000,000
@@ -47,7 +47,7 @@
 47	Romania	      600,000,000
 48	Uzbekistan	      594,000,000
 49	Peru	      586,100,000
-50	Timor-Leste	      553,800,000
+50	Timor	      553,800,000
 51	Italy	      523,200,000
 52	Pakistan	      480,900,000
 53	Thailand	      442,000,000
@@ -62,7 +62,7 @@
 62	Albania	      199,100,000
 63	Belarus	      198,000,000
 64	Cuba	      181,500,000
-65	Congo, Democratic Republic of the	      180,000,000
+65	Democratic Republic of Congo	      180,000,000
 66	Papua New Guinea	      170,000,000
 67	Poland	      155,000,000
 68	Spain	      150,000,000
@@ -77,7 +77,7 @@
 77	Guatemala	       83,070,000
 78	Serbia	       77,500,000
 79	Suriname	       72,000,000
-80	Burma	       50,000,000
+80	Myanmar	       50,000,000
 81	Japan	       44,120,000
 82	Kyrgyzstan	       40,000,000
 83	Georgia	       33,190,000
@@ -86,7 +86,7 @@
 86	Mauritania	       20,000,000
 87	Bulgaria	       15,000,000
 88	South Africa	       15,000,000
-89	Czech Republic	       15,000,000
+89	Czechia	       15,000,000
 90	Tajikistan	       12,000,000
 91	Lithuania	       12,000,000
 92	Israel	       11,800,000

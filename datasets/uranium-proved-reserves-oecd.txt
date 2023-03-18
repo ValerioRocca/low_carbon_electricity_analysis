@@ -12,14 +12,14 @@
  Chile	Latin America	1,400	0
  China	Asia	269,700	39,849
  Democratic Republic of the Congo	Africa	2,700	25,600
- Czech Republic	Europe	119,200	111,765
+ Czechia	Europe	119,200	111,765
  Egypt	Africa	1,900	0
  Finland	Europe	1,200	30
  France	Europe	0	76,006
  Gabon	Africa	5,800	25,403
  Germany	Europe	7,000	219,686
  Greece	Europe	7,000	0
- Denmark ( Greenland)	Europe	114,000	0
+ Denmark	Europe	114,000	0
  Hungary	Europe	13,500	21,067
  India	Asia	129,000	11,398
  Indonesia	Asia	8,400	0
