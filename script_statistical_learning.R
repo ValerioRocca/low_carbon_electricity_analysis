@@ -96,12 +96,15 @@ main = left_join(main,
 rm(coal.proved.reserves)
 
 colnames(oil.proved.reserves.cia) = c("V1","V2", "oil_reserves_2012")
+oil.proved.reserves.cia$oil_reserves_2012 = as.numeric(gsub(",","",oil.proved.reserves.cia$oil_reserves_2012))
 main = left_join(main,
                  select(oil.proved.reserves.cia, -c("V1")),
                  by = c("country" = "V2"))
 rm(oil.proved.reserves.cia)
 
 colnames(uranium.proved.reserves.oecd) = c("V1","V2", "uranium_reserves_2019", "V4")
+uranium.proved.reserves.oecd$uranium_reserves_2019 = as.numeric(gsub(",","",uranium.proved.reserves.oecd$uranium_reserves_2019))
+uranium.proved.reserves.oecd$V1 = sub(".","",uranium.proved.reserves.oecd$V1)
 main = left_join(main,
                  select(uranium.proved.reserves.oecd, -c("V2", "V4")),
                  by = c("country" = "V1"))
@@ -145,3 +148,21 @@ main = left_join(main,
 rm(gdp)
 
 rm(total_energy_data)
+
+# Change variables names
+colnames(main) = c(colnames(main[,1:63]), "land_area", "hdi", "urbaniz_rate",
+                           "particulate_pollution", "agri_land_rate",
+                           "coal_reserves_2021", "oil_reserves_2012",
+                           "uranium_reserves_2019","gas_reserves",
+                           "government_expenditure", "gdp")
+
+# Change ".." to NA
+main = mutate(main, government_expenditure = na_if(government_expenditure, ".."),
+               gdp = na_if(gdp, ".."))
+main$government_expenditure = as.numeric(prova$government_expenditure)
+main$gdp = as.numeric(prova$gdp)
+
+
+# ANALISI DESCRITTIVA DEL DATASET
+
+tot_renew = ggplot(main, aes(hwy))
