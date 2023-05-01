@@ -938,7 +938,6 @@ ggplot(filter(place, tag == "middle_east"),
 #### Cleaning, Selecting and Preparing Data for Modelling ####
 #keep only years between 2000 and 2019
 prova = main[main$year== 2000| main$year==2016,] %>%
-  #substitute NA with 0 when it refers to that, remove columns missing data for non top countries
   mutate(oil_reserves_2012 = coalesce(oil_reserves_2012, 0),
          uranium_reserves_2019 = coalesce(uranium_reserves_2019, 0),
          gas_reserves = coalesce(gas_reserves, 0),
@@ -1003,18 +1002,6 @@ prova <- prova %>% mutate(across(all_of(cols_log), .fns = ~ log(.+1)))
 #plot(nacount)
 #colnames(prova)
 
-
-
-
-
-        
-       
-
-
-
-
-
-
 #correlation plot
 cor_prova = cor(prova[,4:46], use="pairwise.complete.obs")
 corrplot(cor_prova, method="color", tl.cex = .2)
@@ -1044,19 +1031,20 @@ p[normcols] <- lapply(p[normcols], normalize)
 p["year"] <- lapply(p["year"], normalize)
 
 #### chosing dep and indep variables without using tag as dummy variable ####
-objective = "carbon_intensity_elec"
+objective = "low_carbon_share_elec"
 dependent = colnames(p)[c(2,4,37,38,39,41,42,43,44,45,46)]
+dependent = colnames(p)[c(2,4,6,14,18,23,25,28,33,35,37,38,39,41,42,43,44,45,46)]
 
 #### Stepwise LM ####
 #custom formula
 #my_formula <- as.formula(
 #  paste(paste(objective), " ~ ", paste(dependent, collapse = " + ")))
 my_formula <- as.formula(
-  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + ")))
+  paste("qlogis((", paste(objective), "/1.00001)+0.000005) ~ ", paste(dependent, collapse = " + ")))
 #my_formula <- as.formula(
 #  paste(paste(objective), " ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
 #my_formula <- as.formula(
-#  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
+#  paste("qlogis((", paste(objective), "/1.00001)+0.000005) ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
 my_formula
 
 
@@ -1067,14 +1055,22 @@ step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(p)))
 summary(step_model)
 #visualization of residuals
 step_resid=resid(step_model)
-plot(p$gdp, step_resid, 
-     ylab="Residuals", 
-     main="Residuals plot") 
-abline(0, 0)
+#plot(p$gdp, step_resid, 
+#     ylab="Residuals", 
+#     main="Residuals plot") 
+#abline(0, 0)
+qqnorm(step_resid)
+qqline(step_resid)
+plot(fitted(step_model),step_resid)
+hist(step_resid)
+hist(p[,objective])
+hist(plogis(fitted(step_model)))
+hist(qlogis((p[,objective]/1.00001)+0.000005))
+hist(fitted(step_model))
 
 #### Setup for Lasso and Ridge ####
 #y = p[,objective]
-y = qlogis((p[,objective]/100.001)+0.000005)
+y = qlogis((p[,objective]/1.00001)+0.000005)
 x = data.matrix(select(p,dependent))
 #x = cbind(data.matrix(select(p,dependent)),data.matrix(select(p,dependent)^2))
 #colnames(x)<-c(colnames(select(p,dependent)),paste(colnames(select(p,dependent)),"^2"))
@@ -1121,13 +1117,14 @@ print(best_ridge)
 
 #### chosing indep variables using tag as dummy variable ####
 dependent = colnames(p)[c(2,4,37,38,39,41,42,43,44,45,46,47)]
+dependent = colnames(p)[c(2,4,6,14,18,23,25,28,33,35,37,38,39,41,42,43,44,45,46,47)]
 
 #### Stepwise LM ####
 #custom formula
-#my_formula <- as.formula(
-#  paste(paste(objective), " ~ ", paste(dependent, collapse = " + ")))
 my_formula <- as.formula(
-  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + ")))
+  paste(paste(objective), " ~ ", paste(dependent, collapse = " + ")))
+#my_formula <- as.formula(
+#  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + ")))
 #my_formula <- as.formula(
 #  paste(paste(objective), " ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
 #my_formula <- as.formula(
@@ -1142,14 +1139,16 @@ step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(p)))
 summary(step_model)
 #visualization of residuals
 step_resid=resid(step_model)
-plot(p$population, step_resid, 
-     ylab="Residuals", 
-     main="Residuals plot") 
-abline(0, 0)
+#plot(p$gdp, step_resid, 
+#     ylab="Residuals", 
+#     main="Residuals plot") 
+#abline(0, 0)
+qqnorm(step_resid)
+qqline(step_resid)
 
 #### Setup for Lasso and Ridge ####
 #y = p[,objective]
-y = qlogis((p[,objective]/100.001)+0.000005)
+y = qlogis((p[,objective]/1.00001)+0.000005)
 x = data.matrix(select(p,dependent))
 #x = cbind(data.matrix(select(p,dependent)),data.matrix(select(p,dependent)^2))
 #colnames(x)<-c(colnames(select(p,dependent)),paste(colnames(select(p,dependent)),"^2"))
