@@ -957,13 +957,11 @@ ggplot(filter(place, tag == "middle_east"),
 #----
 
 
-#### Data cleaning for modelling ####
-#keep only years between 1990 and 2020
-prova = main[main$year == 2018 | main$year == 2000,] %>%
+#### Cleaning, Selecting and Preparing Data for Modelling ####
+#keep only years between 2000 and 2019
+prova = main[main$year== 2000| main$year==2016,] %>%
   #substitute NA with 0 when it refers to that, remove columns missing data for non top countries
-  select(-c("biofuel_consumption",
-            "biofuel_share_energy",
-            "coal_consumption",
+  select(-c("coal_consumption",
             "coal_share_energy",
             "electricity_share_energy",
             "fossil_fuel_consumption",
@@ -985,7 +983,8 @@ prova = main[main$year == 2018 | main$year == 2000,] %>%
             "solar_consumption",
             "solar_share_energy",
             "wind_consumption",
-            "wind_share_energy"
+            "wind_share_energy",
+            "government_expenditure"
   )) %>% 
   mutate(oil_reserves_2012 = coalesce(oil_reserves_2012, 0),
          uranium_reserves_2019 = coalesce(uranium_reserves_2019, 0),
@@ -1024,16 +1023,16 @@ prova = prova[(prova$country != "Antarctica") &
                 (prova$country != "United States Virgin Islands")
               ,]
 # Palestine missing data in 2000,
-# productions missing 2017 to 2020 for not upper third countries,
+# productions missing 2017 to 2020,
 # some energy_cons_change_twh missing can throw to 0,
 # some primary_energy_consumption missing, can copy from other year maybe?,
 # agri_land_rate missing for 2019 can copy 2018,
 # missing data for taiwan, north korea, macao
 
 #pro capite (million) transformation
-cols_procapite <- c(5,8,9,11,12,13,14,16,17,19,20,22,24,25,27,28,30,31,33,35,37,39,42,44,45,46,47,48,49)
+cols_procapite <- c(6,7,9,10,11,12,14,15,17,18,20,22,23,25,26,28,29,31,33,35,37,40,42,43,44,45,46)
 prova <- prova %>% mutate(across(all_of(cols_procapite), .fns = ~.*1000000/population))
-cols_log <- c(4, 39, 42, 44, 45, 46, 47, 48, 49)
+cols_log <- c(4, 37, 40, 42, 43, 44, 45, 46)
 prova <- prova %>% mutate(across(all_of(cols_log), .fns = ~ log(.+1)))
 #find na values for data cleaning
 #colSums(is.na(prova))/3760*100
@@ -1047,59 +1046,75 @@ prova <- prova %>% mutate(across(all_of(cols_log), .fns = ~ log(.+1)))
 
 #nacount = prova %>%
 #  group_by(year) %>%
-#  summarize(na_perc = sum(is.na(land_area))/n())
+#  summarize(na_perc = sum(is.na(particulate_pollution))/n())
 #plot(nacount)
 #colnames(prova)
 
 #correlation plot
-cor_prova = cor(prova[,4:49], use="pairwise.complete.obs")
+cor_prova = cor(prova[,4:46], use="pairwise.complete.obs")
 corrplot(cor_prova, method="color", tl.cex = .2)
 
 summary(prova)
 colnames(prova)
-p=prova[complete.cases(prova),]
+p=prova
+#filter p by tag
+#p=p[p$tag=="developed",]
+p=p[complete.cases(p),]
+
 
 #normalizing columns
 normalize <- function(x) {
   return((x- min(x)) /(max(x)-min(x)))
 }
-#normcols=c(2,4:49) with year
-normcols=c(4:49)
+
+normcols=c(4:46)
+# year-wise normalization
+#for (i in unique(p$year)){
+#  p[p$year==i,normcols] <- lapply(p[p$year==i,normcols], normalize)
+#}
+#overall normalization
 p[normcols] <- lapply(p[normcols], normalize)
+
+#normalize year
+p["year"] <- lapply(p["year"], normalize)
+
+#### chosing dep and indep variables without using tag as dummy variable ####
+objective = "carbon_intensity_elec"
+dependent = colnames(p)[c(2,4,37,38,39,41,42,43,44,45,46)]
 
 #### Stepwise LM ####
 #custom formula
 #my_formula <- as.formula(
-#  paste("nuclear_share_elec ~ ", paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = " + ")))
-#my_formula <- as.formula(
-#  paste("qlogis((nuclear_share_elec/100.001)+0.000005) ~ ", paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = " + ")))
-#my_formula <- as.formula(
-#  paste("carbon_intensity_elec ~ ", paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = " + "), " + I(",  paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = "^2) + I("), "^2)"))
+#  paste(paste(objective), " ~ ", paste(dependent, collapse = " + ")))
 my_formula <- as.formula(
-  paste("qlogis((nuclear_share_elec/100.001)+0.000005) ~ ", paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = " + "), " + I(",  paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = "^2) + I("), "^2)"))
-#my_formula
+  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + ")))
+#my_formula <- as.formula(
+#  paste(paste(objective), " ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
+#my_formula <- as.formula(
+#  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
+my_formula
 
 
 #creating model
-#model <- lm(qlogis((renewables_share_elec/100.001)+0.000005)~.-country-iso_code, p)
-#year+land_area+hdi+urbaniz_rate+particulate_pollution+agri_land_rate+coal_reserves_2021+oil_reserves_2012+uranium_reserves_2019+gas_reserves+government_expenditure+gdp
 model <- lm(my_formula, p)
 summary(model)
 step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(p)))
 summary(step_model)
+#visualization of residuals
 step_resid=resid(step_model)
-plot(p$uranium_reserves_2019, step_resid, 
-     ylab="Residuals", xlab="X", 
-     main="a") 
+plot(p$gdp, step_resid, 
+     ylab="Residuals", 
+     main="Residuals plot") 
 abline(0, 0)
 
-##### Lasso ####
-#y = p$nuclear_share_elec
-y = qlogis((p$nuclear_share_elec/100.001)+0.000005)
-#x = data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49)))
-x = cbind(data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))^2))
-colnames(x)<-c(colnames(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),paste(colnames(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),"^2"))
+#### Setup for Lasso and Ridge ####
+#y = p[,objective]
+y = qlogis((p[,objective]/100.001)+0.000005)
+x = data.matrix(select(p,dependent))
+#x = cbind(data.matrix(select(p,dependent)),data.matrix(select(p,dependent)^2))
+#colnames(x)<-c(colnames(select(p,dependent)),paste(colnames(select(p,dependent)),"^2"))
 
+#### Lasso ####
 lasso <- glmnet(x, y, alpha = 1)
 plot(lasso, xvar = "lambda", label=TRUE)
 
@@ -1119,12 +1134,6 @@ coef(best_lasso)
 print(best_lasso)
 
 #### Ridge ####
-#y = p$carbon_intensity_elec
-y = qlogis((p$nuclear_share_elec/100.001)+0.000005)
-#x = data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49)))
-x = cbind(data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))^2))
-colnames(x)<-c(colnames(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),paste(colnames(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),"^2"))
-
 ridge <- glmnet(x, y, alpha = 0)
 plot(ridge, xvar="dev", label=TRUE)
 
@@ -1143,3 +1152,77 @@ best_ridge <- glmnet(x, y, alpha = 0, lambda = best_lambda)
 coef(best_ridge)
 print(best_ridge)
 
+
+
+#### chosing indep variables using tag as dummy variable ####
+dependent = colnames(p)[c(2,4,37,38,39,41,42,43,44,45,46,47)]
+
+#### Stepwise LM ####
+#custom formula
+#my_formula <- as.formula(
+#  paste(paste(objective), " ~ ", paste(dependent, collapse = " + ")))
+my_formula <- as.formula(
+  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + ")))
+#my_formula <- as.formula(
+#  paste(paste(objective), " ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
+#my_formula <- as.formula(
+#  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
+my_formula
+
+
+#creating model
+model <- lm(my_formula, p)
+summary(model)
+step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(p)))
+summary(step_model)
+#visualization of residuals
+step_resid=resid(step_model)
+plot(p$population, step_resid, 
+     ylab="Residuals", 
+     main="Residuals plot") 
+abline(0, 0)
+
+#### Setup for Lasso and Ridge ####
+#y = p[,objective]
+y = qlogis((p[,objective]/100.001)+0.000005)
+x = data.matrix(select(p,dependent))
+#x = cbind(data.matrix(select(p,dependent)),data.matrix(select(p,dependent)^2))
+#colnames(x)<-c(colnames(select(p,dependent)),paste(colnames(select(p,dependent)),"^2"))
+
+#### Lasso ####
+lasso <- glmnet(x, y, alpha = 1)
+plot(lasso, xvar = "lambda", label=TRUE)
+
+#perform k-fold cross-validation to find optimal lambda value
+cv_model <- cv.glmnet(x, y, alpha = 1)
+
+#find optimal lambda value that minimizes test MSE
+best_lambda <- cv_model$lambda.min
+best_lambda
+
+#produce plot of test MSE by lambda value
+plot(cv_model)
+
+#analyze best model
+best_lasso <- glmnet(x, y, alpha = 1, lambda = best_lambda)
+coef(best_lasso)
+print(best_lasso)
+
+#### Ridge ####
+ridge <- glmnet(x, y, alpha = 0)
+plot(ridge, xvar="dev", label=TRUE)
+
+#perform k-fold cross-validation to find optimal lambda value
+cv_model <- cv.glmnet(x, y, alpha = 0)
+
+#find optimal lambda value that minimizes test MSE
+best_lambda <- cv_model$lambda.min
+best_lambda
+
+#produce plot of test MSE by lambda value
+plot(cv_model)
+
+#analyze best model
+best_ridge <- glmnet(x, y, alpha = 0, lambda = best_lambda)
+coef(best_ridge)
+print(best_ridge)
