@@ -1,6 +1,4 @@
-#----
-# Libraries
-#----
+#### Libraries ####
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -8,12 +6,9 @@ library(viridis)
 library(car) # for box-cox
 #library(maps) # for world map
 library(rworldmap) #for world map
-#----
+library(glmnet)
 
-
-#----
-# Preparation of the dataset
-#----
+#### Preparation and Cleaning ####
 
 # Remove variables from main dataframe
 main = select(total_energy_data, -c("gdp", "biofuel_cons_change_pct",
@@ -68,7 +63,7 @@ main = select(total_energy_data, -c("gdp", "biofuel_cons_change_pct",
 
 main = main[main$iso_code!='',]
 
-# Merge other datasetsq
+# Merge other datasets
 
 main = left_join(main,
                  select(country_areas, -c("Entity")),
@@ -178,21 +173,14 @@ main$government_expenditure = as.numeric(main$government_expenditure)
 main$gdp = as.numeric(main$gdp)
 
 
-#----
-
-
-#----
+#### ANALISI DESCRITTIVA DEL DATASET ####
 # Colors:
-#----
 # Nuclear: "#B2FF00"
 # Hydro: "#05B6FF"
 # Solar: "#0060FA"
 # Wind: #141BDB"
 # Other: "#00296B"
-#----
 
-
-# ----
 # Index of the descriptive analysis
 # 1. Analysis on the generation of electricity from LC sources in the world
 # 1.1. World renewable and LC electricity generation time series, 1975-2020
@@ -208,12 +196,8 @@ main$gdp = as.numeric(main$gdp)
 #----
 
 
-#----
-# 1. Analysis on the world electricity generation from LC sources
-#----
-#----
-# 1.1. World renewable and LC electricity generation time series, 1965-2020
-#----
+# 1. Analysis on the world electricity generation from LC sources ----
+# 1.1. World renewable and LC electricity generation time series, 1965-2020 ----
 place = main[c("year","renewables_electricity", "low_carbon_electricity")] %>%
   mutate_all(~replace_na(.,0)) %>%
   group_by(year) %>%
@@ -971,4 +955,191 @@ ggplot(filter(place, tag == "middle_east"),
 
 
 #----
+
+
+#### Data cleaning for modelling ####
+#keep only years between 1990 and 2020
+prova = main[main$year == 2018 | main$year == 2000,] %>%
+  #substitute NA with 0 when it refers to that, remove columns missing data for non top countries
+  select(-c("biofuel_consumption",
+            "biofuel_share_energy",
+            "coal_consumption",
+            "coal_share_energy",
+            "electricity_share_energy",
+            "fossil_fuel_consumption",
+            "fossil_share_energy",
+            "gas_consumption",
+            "gas_share_energy",
+            "hydro_consumption",
+            "hydro_share_energy",
+            "low_carbon_consumption",
+            "low_carbon_share_energy",
+            "nuclear_consumption",
+            "nuclear_share_energy",
+            "oil_consumption",
+            "oil_share_energy",
+            "other_renewable_consumption",
+            "other_renewables_share_energy",
+            "renewables_consumption",
+            "renewables_share_energy",
+            "solar_consumption",
+            "solar_share_energy",
+            "wind_consumption",
+            "wind_share_energy"
+  )) %>% 
+  mutate(oil_reserves_2012 = coalesce(oil_reserves_2012, 0),
+         uranium_reserves_2019 = coalesce(uranium_reserves_2019, 0),
+         gas_reserves = coalesce(gas_reserves, 0),
+         coal_reserves_2021 = coalesce(coal_reserves_2021, 0))
+#remove Countries that have all important fields NA or 0
+prova = prova[(prova$country != "Antarctica") &
+                (prova$country != "Netherlands Antilles") &
+                (prova$country != "Gibraltar") &
+                (prova$country != "Western Sahara") &
+                (prova$country != "Niue") &
+                (prova$country != "Saint Helena") &
+                (prova$country != "Bermuda") &
+                (prova$country != "French Guiana") &
+                (prova$country != "Guadeloupe") &
+                (prova$country != "Micronesia (country)") &
+                (prova$country != "Northern Mariana Islands") &
+                (prova$country != "Reunion") &
+                (prova$country != "Tuvalu") &
+                (prova$country != "Martinique") &
+                (prova$country != "British Virgin Islands") &
+                (prova$country != "Cook Islands") &
+                (prova$country != "Faeroe Islands") &
+                (prova$country != "Falkland Islands") &
+                (prova$country != "Montserrat") &
+                (prova$country != "New Caledonia") &
+                (prova$country != "Saint Pierre and Miquelon") &
+                (prova$country != "Aruba") &
+                (prova$country != "Cayman Islands") &
+                (prova$country != "French Polynesia") &
+                (prova$country != "Turks and Caicos Islands") &
+                (prova$country != "American Samoa") &
+                (prova$country != "Greenland") &
+                (prova$country != "Guam") &
+                (prova$country != "Nauru") &
+                (prova$country != "United States Virgin Islands")
+              ,]
+# Palestine missing data in 2000,
+# productions missing 2017 to 2020 for not upper third countries,
+# some energy_cons_change_twh missing can throw to 0,
+# some primary_energy_consumption missing, can copy from other year maybe?,
+# agri_land_rate missing for 2019 can copy 2018,
+# missing data for taiwan, north korea, macao
+
+#pro capite (million) transformation
+cols_procapite <- c(5,8,9,11,12,13,14,16,17,19,20,22,24,25,27,28,30,31,33,35,37,39,42,44,45,46,47,48,49)
+prova <- prova %>% mutate(across(all_of(cols_procapite), .fns = ~.*1000000/population))
+cols_log <- c(4, 39, 42, 44, 45, 46, 47, 48, 49)
+prova <- prova %>% mutate(across(all_of(cols_log), .fns = ~ log(.+1)))
+#find na values for data cleaning
+#colSums(is.na(prova))/3760*100
+
+#prova[is.na(prova$energy_cons_change_twh),]$energy_consumption
+
+#View(prova[is.na(prova$coal_share_elec),c("country","year","coal_share_elec")])
+#View(prova[!(is.na(prova$coal_share_elec)|prova$coal_share_elec==0),c("country","year","coal_share_elec")])
+
+#count NA by year
+
+#nacount = prova %>%
+#  group_by(year) %>%
+#  summarize(na_perc = sum(is.na(land_area))/n())
+#plot(nacount)
+#colnames(prova)
+
+#correlation plot
+cor_prova = cor(prova[,4:49], use="pairwise.complete.obs")
+corrplot(cor_prova, method="color", tl.cex = .2)
+
+summary(prova)
+colnames(prova)
+p=prova[complete.cases(prova),]
+
+#normalizing columns
+normalize <- function(x) {
+  return((x- min(x)) /(max(x)-min(x)))
+}
+#normcols=c(2,4:49) with year
+normcols=c(4:49)
+p[normcols] <- lapply(p[normcols], normalize)
+
+#### Stepwise LM ####
+#custom formula
+#my_formula <- as.formula(
+#  paste("nuclear_share_elec ~ ", paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = " + ")))
+#my_formula <- as.formula(
+#  paste("qlogis((nuclear_share_elec/100.001)+0.000005) ~ ", paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = " + ")))
+#my_formula <- as.formula(
+#  paste("carbon_intensity_elec ~ ", paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = " + "), " + I(",  paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = "^2) + I("), "^2)"))
+my_formula <- as.formula(
+  paste("qlogis((nuclear_share_elec/100.001)+0.000005) ~ ", paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = " + "), " + I(",  paste(colnames(p)[c(2,4,39,40,41,42,43,44,45,46,47,48,49)], collapse = "^2) + I("), "^2)"))
+#my_formula
+
+
+#creating model
+#model <- lm(qlogis((renewables_share_elec/100.001)+0.000005)~.-country-iso_code, p)
+#year+land_area+hdi+urbaniz_rate+particulate_pollution+agri_land_rate+coal_reserves_2021+oil_reserves_2012+uranium_reserves_2019+gas_reserves+government_expenditure+gdp
+model <- lm(my_formula, p)
+summary(model)
+step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(p)))
+summary(step_model)
+step_resid=resid(step_model)
+plot(p$uranium_reserves_2019, step_resid, 
+     ylab="Residuals", xlab="X", 
+     main="a") 
+abline(0, 0)
+
+##### Lasso ####
+#y = p$nuclear_share_elec
+y = qlogis((p$nuclear_share_elec/100.001)+0.000005)
+#x = data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49)))
+x = cbind(data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))^2))
+colnames(x)<-c(colnames(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),paste(colnames(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),"^2"))
+
+lasso <- glmnet(x, y, alpha = 1)
+plot(lasso, xvar = "lambda", label=TRUE)
+
+#perform k-fold cross-validation to find optimal lambda value
+cv_model <- cv.glmnet(x, y, alpha = 1)
+
+#find optimal lambda value that minimizes test MSE
+best_lambda <- cv_model$lambda.min
+best_lambda
+
+#produce plot of test MSE by lambda value
+plot(cv_model)
+
+#analyze best model
+best_lasso <- glmnet(x, y, alpha = 1, lambda = best_lambda)
+coef(best_lasso)
+print(best_lasso)
+
+#### Ridge ####
+#y = p$carbon_intensity_elec
+y = qlogis((p$nuclear_share_elec/100.001)+0.000005)
+#x = data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49)))
+x = cbind(data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),data.matrix(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))^2))
+colnames(x)<-c(colnames(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),paste(colnames(select(p,c(2,4,39,40,41,42,43,44,45,46,47,48,49))),"^2"))
+
+ridge <- glmnet(x, y, alpha = 0)
+plot(ridge, xvar="dev", label=TRUE)
+
+#perform k-fold cross-validation to find optimal lambda value
+cv_model <- cv.glmnet(x, y, alpha = 0)
+
+#find optimal lambda value that minimizes test MSE
+best_lambda <- cv_model$lambda.min
+best_lambda
+
+#produce plot of test MSE by lambda value
+plot(cv_model)
+
+#analyze best model
+best_ridge <- glmnet(x, y, alpha = 0, lambda = best_lambda)
+coef(best_ridge)
+print(best_ridge)
 
