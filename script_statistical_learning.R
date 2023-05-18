@@ -569,7 +569,7 @@ colnames(place) = c("tag", "Source", "ten", "twenty")
 place[place$Source  == "low_carbon_electricity", "Source"] = "LC"
 place[place$Source  == "renewables_electricity", "Source"] = "REN"
 
-ggplot(place, aes(ten, twenty, col = Source)) +
+gg1 =ggplot(place, aes(ten, twenty, col = Source)) +
   geom_point(size = 3) +
   geom_line(aes(group = tag), color = "black", linetype = "dashed") +
   geom_text(aes(label = tag), hjust = 0, vjust = 1.5) +
