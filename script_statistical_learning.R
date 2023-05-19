@@ -875,7 +875,8 @@ ggplot(filter(place, tag == "developed"),
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   labs(title = "Green score in developed countries, by source, 2020",
        x = "",
-       y = "Green score")
+       y = "Green score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Eastern europe
 ggplot(filter(place, tag == "east_europe"),
@@ -885,7 +886,8 @@ ggplot(filter(place, tag == "east_europe"),
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   labs(title = "Green score in Eastern European countries, by source, 2020",
        x = "",
-       y = "Green score")
+       y = "Green score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Latin
 ggplot(filter(place, tag == "latin", iso_code != "PRY"),
@@ -896,7 +898,8 @@ ggplot(filter(place, tag == "latin", iso_code != "PRY"),
   labs(title = "Green score in Latin America & Caribbean, by source, 2020",
        subtitle = "Note: Paraguay removed being an outlier",
        x = "",
-       y = "Green score")
+       y = "Green score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Asian
 ggplot(filter(place, tag == "asian", iso_code != "LAO", iso_code != "BTN"),
@@ -907,7 +910,8 @@ ggplot(filter(place, tag == "asian", iso_code != "LAO", iso_code != "BTN"),
   labs(title = "Green score in Asia, by source, 2020",
        subtitle = "Note: Laos and Bhutan removed being outliers",
        x = "",
-       y = "Green score")
+       y = "Green score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Sub-saharian
 ggplot(filter(place, tag == "sub_african"),
@@ -917,7 +921,8 @@ ggplot(filter(place, tag == "sub_african"),
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   labs(title = "Green score in Sub-Saharan countries, by source, 2020",
        x = "",
-       y = "Green score")
+       y = "Green score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 # Middle-east
@@ -928,7 +933,8 @@ ggplot(filter(place, tag == "middle_east"),
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   labs(title = "Green score in Middle East & North Africa, by source, 2020",
        x = "",
-       y = "Green score")
+       y = "Green score") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 

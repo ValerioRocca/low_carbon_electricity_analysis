@@ -1,15 +1,54 @@
 ---
-title: "Titolo provvisorio"
-author: "Rocca Valerio, Virginio Giacomo"
-date: "`r Sys.Date()`"
+title: ""
+author: ""
 output:
   pdf_document: default
-  html_document:
-    df_print: paged
 ---
+
+\begin{center}
+
+\huge
+University of Padua
+
+\huge
+Departments of Mathematics
+
+\vspace{1cm}
+
+\huge
+Master Degree in Data Science
+
+\vspace{1.5cm}
+
+\includegraphics[width=2in]{logo_unipd.png}
+
+\vspace{1cm}
+
+\Huge
+Low-Carbon Electricity Generation: \\A Comprehensive Analysis
+
+\vspace{1.5cm}
+
+\Large
+Valerio Rocca, 2094861
+
+\Large
+Giacomo Virginio, 2076681
+
+\vspace{1.5cm}
+
+\huge
+Academic Year 2022/2023
+
+\end{center}
+
+\newpage
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(dplyr.summarise.inform = FALSE)
+options(countrycode_warning = FALSE)
+options(dplyr.print_max = Inf)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -19,45 +58,44 @@ library(rworldmap) #for world map
 library(glmnet)
 library(readxl)
 library(gridExtra)
+library(knitr)
+suppressMessages(library(ggplot2))
+suppressMessages(library(rworldmap))
 
 ```
+\large
+\textbf{Contents}
 
-## TODO list
-1) Abstract
-2) Obtaining data
-2) Data cleaning and filtering (including pre-processing)
-3) Exploratory analysis
-4) Descriptive analysis
-5) Data modeling (RICORDATI DI CAMBIARE OIL DI CIA CON OWID)
-6) Usare report Pietro come riferimento
-7) Check errori: low-carbon col trattino, aggiungere "Figure x".
+\begin{tabular}{l@{\hskip 8em}r}
+1. \textbf{Abstract} & \textbf{X} \\
+2. Obtaining data & X \\
+3. Data pre-processing & X \\
+4. Exploratory analyses & X \\
+5. Descriptive analyses & X \\
+\hspace{1em} 5.1 Global analyses & X \\
+\hspace{1em} 5.2 Analyses by source & X \\
+\hspace{1em} 5.3 Analyses by macroregion & X \\
+\hspace{1em} 5.4 Green Score with focus on the sources & X \\
+\hspace{1em} 5.5 Green Score with focus on the macroregions & X \\
+6. Modeling & X \\
+Bibliography and links & X \\
+\end{tabular}
 
-## Contents
-**1.   Abstract                                                   X**
+\vspace{1.5cm}
 
-**2.   Obtaining data                                             X**
+\small
 
-**3.   Data pre-processing                                        X**
+\newpage
 
-**4.   Exploratory analyses                                        X**
-
-**5.   Descriptive analyses                                             X**
-
-  5.1   Analisi generali e per nazione.......................... X
-  
-  5.2   Per fonte ............................................ X
-  
-  5.3   Per regione ............................................ X
-  
-  5.4   Studio del *green score* ............................................ X
-  
-
+# Chapter 1
 # Abstract
 This is the abstract
 
+\newpage
 
-## Obtaining data
-We could not find a single dataset containing all the information of interest. Thus, the project's first step was merging multiple datasets into one. The primary one is the *Energy dataset* by Our World in Data (from now onwards referred to as "OWID") [1], which contains various time series for each world country regarding energy and electricity production and consumption.
+# Chapter 2
+# Obtaining data
+We could not find a single dataset containing all the information of interest. Thus, the project's first step is merging multiple datasets into one. The primary one is the *Energy dataset* by Our World in Data (from now onwards referred to as "OWID") [1], which contains various time series for each world country regarding energy and electricity production and consumption.
 
 ```{r obtain_energy, include=TRUE, warning = FALSE}
 
@@ -66,7 +104,7 @@ main = read.csv("datasets//Total_energy_data.csv")
 ```
 
 
-We then merged the following datasets into it:
+We then merge the following datasets into it:
 
 - *GDP (constant 2015 US$)* by World Bank [2], which contains the time series of the GDP in each country from 1960 to 2021, measured in constant 2015 USA dollars.
 - *Land Area* by OWID [3], which contains the time series of the land area of each country from 1961 to 2021, measured in squared kilometers;
@@ -90,46 +128,22 @@ Merging presents three critical issues, which are listed below, together with th
 # Delete units from "main" without an ISO code
 main = main[main$iso_code!='',]
 
-# Import the GDP dataset
-gdp = read_excel("datasets//gdp_constant_2015_dollars.xlsx")[,4:66]
-# Structure modification
-colnames(gdp) = c("code", 1960:2021)
-gdp = gather(gdp, key = "year", value = "gdp", -code)
-gdp$year = as.integer(gdp$year)
-# Merging
-main = left_join(main, gdp, by = c("iso_code" = "code", "year" = "year"))
-rm(gdp)
-
-# Import and merging of country area
-country_areas = read.csv("datasets//country_areas.csv")
-main = left_join(main, select(country_areas, -c("Entity")),
+# Creation of a function able to automatically join datasets from OWID
+join_owid = function(main_data, secondary_dataset_link){
+  place_data = read.csv(paste(secondary_dataset_link))
+  main_data = left_join(main_data, select(place_data, -c("Entity")),
                  by = c("iso_code" = "Code", "year" = "Year"))
-rm(country_areas)
+  rm(place_data)
+  return(main_data)
+}
 
-# Import and merging of agricultural share area
-agri_share = read.csv("datasets//share_of_land_area_used_for_agriculture.csv")
-main = left_join(main, select(agri_share, -c("Entity")),
-                 by = c("iso_code" = "Code", "year" = "Year"))
-rm(agri_share)
-
-# Import and merging of urbanization rate
-urbanization_rate = read.csv("datasets//urbanization_rate.csv")
-main = left_join(main, select(urbanization_rate, -c("Entity")),
-                 by = c("iso_code" = "Code", "year" = "Year"))
-rm(urbanization_rate)
-
-# Import and merging of HDI
-hdi = read.csv("datasets//human_development_index.csv")
-main = left_join(main, select(hdi, -c("Entity")),
-                 by=c("iso_code" = "Code", "year" = "Year"))
-rm(hdi)
-
-# Import, selection and merging of deaths from air pollution
-death_rates = read.csv("datasets//death_rates_from_air_pollution.csv")[, c(2,3,5)]
-colnames(death_rates) = c("Code", "Year", "particulate_pollution")
-main = left_join(main, death_rates,
-                 by = c("iso_code" = "Code", "year" = "Year"))
-rm(death_rates)
+# Import and merging of OWID variables, except of air pollution
+main = join_owid(main, "datasets//country_areas.csv")
+main = join_owid(main, "datasets//share_of_land_area_used_for_agriculture.csv")
+main = join_owid(main, "datasets//urbanization_rate.csv")
+main = join_owid(main, "datasets//human_development_index.csv")
+main = join_owid(main, "datasets//oil_proved_reserves.csv")
+main = join_owid(main, "datasets//natural_gas_proved_reserves.csv")
 
 # Import, filtering and merging of coal proved reserves
 coal_res = read.csv("datasets//coal_proved_reserves.csv")
@@ -138,18 +152,6 @@ colnames(coal_res) = c("Entity", "Code", "Year", "coal_reserves_2021")
 main = left_join(main, select(coal_res, -c("Entity","Year")),
                  by = c("iso_code" = "Code"))
 rm(coal_res)
-
-# Import and merging of oil proved reserves
-oil_res = read.csv("datasets//oil_proved_reserves.csv")
-main = left_join(main, select(oil_res, -c("Entity")),
-                 by = c("iso_code" = "Code", "year" = "Year"))
-rm(oil_res)
-
-# Import and merging of natural gas reserves
-gas_res = read.csv("datasets//natural_gas_proved_reserves.csv")
-main = left_join(main, select(gas_res, -c("Entity",)),
-                 by = c("iso_code" = "Code", "year" = "Year"))
-rm(gas_res)
 
 # Import and merging of uranium reserves
 uranium_res = read.csv("datasets//uranium_proved_reserves.txt", sep = "\t")
@@ -160,18 +162,36 @@ main = left_join(main, select(uranium_res, -c("V2", "V4")),
                  by = c("country" = "V1"))
 rm(uranium_res)
 
+# Import the GDP dataset
+gdp = read_excel("datasets//gdp_constant_2015_dollars.xlsx")[,4:66]
+# Structure modification
+colnames(gdp) = c("code", 1960:2021)
+gdp = gather(gdp, key = "year", value = "gdp", -code)
+gdp$year = as.integer(gdp$year)
+# Merging
+main = left_join(main, gdp, by = c("iso_code" = "code", "year" = "year"))
+rm(gdp)
+
+# Import, selection and merging of deaths from air pollution
+ death_rates = read.csv("datasets//death_rates_from_air_pollution.csv")[, c(2,3,5)]
+ colnames(death_rates) = c("Code", "Year", "particulate_pollution")
+ main = left_join(main, death_rates,
+                  by = c("iso_code" = "Code", "year" = "Year"))
+rm(death_rates)
+
 ```
+\newpage
 
 
-
-
+# Chapter 3
 # Data pre-processing
 
-In this section, we present the pre-processing activities performed:
+In this section, we present the pre-processing activities performed.
 
-1. **Units selection**, computed over the *Energy dataset*. Already partially computed and explained in the previous section; in this phase we also removed two regions with too many missing values: Anctartica and Western Sahara.
+1. **Units selection**, computed over the *Energy dataset*. Already partially computed and explained in the previous section, in this phase we also removed two regions with too many missing values: Anctartica and Western Sahara.
 2. **Feature selection**, computed over the *Energy dataset*. From the original 129 variables, we kept only 36 relevant for the analyses.
 3. **Feature renaming**, computed over *main*, as the features merged to the *Energy dataset* have inconvenient names.
+4. **Feature addition**, computed over *main* in paragraph 5.3. The new categorical variable groups the world countries into six macroregions.
 
 
 ```{r data_preproc, include=TRUE, warning = FALSE}
@@ -180,120 +200,81 @@ In this section, we present the pre-processing activities performed:
 main = filter(main, iso_code != "ATA", iso_code != "ESH")
 
 # 2. Feature selection
-
-main = select(main, -c("gdp.x",
-            "biofuel_cons_change_pct",
-            "biofuel_cons_change_twh",
-            "biofuel_cons_per_capita",
-            "biofuel_elec_per_capita",
-            "coal_cons_change_pct",
-            "coal_cons_change_twh",
-            "coal_cons_per_capita",
-            "coal_elec_per_capita",
-            "coal_prod_change_pct",
-            "coal_prod_change_twh",
-            "coal_prod_per_capita",
-            "coal_consumption",
-            "coal_share_energy",
-            "energy_cons_change_pct",
-            "energy_per_capita",
-            "energy_per_gdp",
-            "electricity_share_energy",
-            "fossil_cons_change_pct",
-            "fossil_cons_change_twh",
-            "fossil_elec_per_capita",
-            "fossil_fuel_consumption",
-            "fossil_share_energy",
-            "gas_cons_change_pct",
-            "gas_cons_change_twh",
-            "gas_elec_per_capita",
-            "gas_prod_change_pct",
-            "gas_prod_change_twh",
-            "gas_prod_per_capita",
-            "gas_consumption",
-            "gas_share_energy",
-            "hydro_cons_change_pct",
-            "hydro_cons_change_twh",
-            "hydro_elec_per_capita",
-            "fossil_energy_per_capita",
-            "hydro_energy_per_capita",
-            "hydro_consumption",
-            "hydro_share_energy",
-            "low_carbon_cons_change_pct",
-            "low_carbon_cons_change_twh",
-            "low_carbon_elec_per_capita",
-            "low_carbon_energy_per_capita",
-            "low_carbon_consumption",
-            "low_carbon_share_energy",
-            "net_elec_imports_share_demand",
-            "nuclear_cons_change_pct",
-            "nuclear_cons_change_twh",
-            "nuclear_elec_per_capita",
-            "nuclear_energy_per_capita",
-            "nuclear_consumption",
-            "nuclear_share_energy",
-            "oil_prod_per_capita",
-            "gas_energy_per_capita",
-            "oil_elec_per_capita",
-            "oil_prod_change_pct",
-            "oil_prod_change_twh",
-            "oil_consumption",
-            "oil_share_energy",
-            "other_renewable_exc_biofuel_electricity",
-            "other_renewables_cons_change_pct",
-            "other_renewables_cons_change_twh",
-            "other_renewables_elec_per_capita",
-            "other_renewables_elec_per_capita_exc_biofuel",
-            "other_renewables_energy_per_capita",
-            "other_renewables_share_elec_exc_biofuel",
-            "other_renewable_consumption",
-            "other_renewables_share_energy",
-            "per_capita_electricity",
-            "renewables_cons_change_pct",
-            "renewables_cons_change_twh",
-            "renewables_elec_per_capita",
-            "renewables_energy_per_capita",
-            "renewables_consumption",
-            "renewables_share_energy",
-            "solar_cons_change_pct",
-            "solar_cons_change_twh",
-            "solar_elec_per_capita",
-            "solar_consumption",
-            "solar_share_energy",
-            "wind_cons_change_pct",
-            "wind_cons_change_twh",
-            "wind_consumption",
-            "wind_share_energy",
-            "solar_energy_per_capita",
-            "wind_elec_per_capita",
-            "wind_energy_per_capita",
-            "oil_cons_change_pct",
-            "oil_cons_change_twh",
-            "oil_energy_per_capita",
-            "biofuel_consumption",
-            "biofuel_electricity",
-            "biofuel_share_elec",
-            "biofuel_share_energy"))
+main = select(main, -c("gdp.x", "biofuel_cons_change_pct",
+                       "biofuel_cons_change_twh", "biofuel_cons_per_capita",
+                       "biofuel_elec_per_capita", "biofuel_consumption",
+                       "biofuel_electricity", "biofuel_share_elec",
+                       "biofuel_share_energy", "coal_cons_change_pct",
+                       "coal_cons_change_twh", "coal_cons_per_capita",
+                       "coal_elec_per_capita", "coal_prod_change_pct",
+                       "coal_prod_change_twh", "coal_prod_per_capita",
+                       "coal_consumption", "coal_share_energy",
+                       "energy_cons_change_pct", "energy_per_capita",
+                       "energy_per_gdp", "electricity_share_energy",
+                       "fossil_cons_change_pct", "fossil_cons_change_twh",
+                       "fossil_elec_per_capita", "fossil_fuel_consumption",
+                       "fossil_share_energy", "gas_cons_change_pct",
+                       "gas_cons_change_twh", "gas_elec_per_capita",
+                       "gas_prod_change_pct", "gas_prod_change_twh",
+                       "gas_prod_per_capita", "gas_consumption",
+                       "gas_share_energy", "hydro_cons_change_pct",
+                       "hydro_cons_change_twh", "hydro_elec_per_capita",
+                       "fossil_energy_per_capita", "hydro_energy_per_capita",
+                       "hydro_consumption", "hydro_share_energy",
+                       "low_carbon_cons_change_pct", "low_carbon_cons_change_twh",
+                       "low_carbon_elec_per_capita", "low_carbon_energy_per_capita",
+                       "low_carbon_consumption", "low_carbon_share_energy",
+                       "net_elec_imports_share_demand", "nuclear_cons_change_pct",
+                       "nuclear_cons_change_twh", "nuclear_elec_per_capita",
+                       "nuclear_energy_per_capita", "nuclear_consumption",
+                       "nuclear_share_energy", "oil_prod_per_capita",
+                       "gas_energy_per_capita", "oil_elec_per_capita",
+                       "oil_prod_change_pct", "oil_prod_change_twh",
+                       "oil_consumption", "oil_share_energy",
+                       "other_renewable_exc_biofuel_electricity", "other_renewables_cons_change_pct",
+                       "other_renewables_cons_change_twh", "other_renewables_elec_per_capita",
+                       "other_renewables_elec_per_capita_exc_biofuel",
+                       "other_renewables_energy_per_capita",
+                       "other_renewables_share_elec_exc_biofuel", "other_renewable_consumption",
+                       "other_renewables_share_energy", "per_capita_electricity",
+                       "renewables_cons_change_pct", "renewables_cons_change_twh",
+                       "renewables_elec_per_capita", "renewables_energy_per_capita",
+                       "renewables_consumption", "renewables_share_energy",
+                       "solar_cons_change_pct", "solar_cons_change_twh",
+                       "solar_elec_per_capita", "solar_consumption",
+                       "solar_share_energy", "wind_cons_change_pct",
+                       "wind_cons_change_twh", "wind_consumption",
+                       "wind_share_energy", "solar_energy_per_capita",
+                       "wind_elec_per_capita", "wind_energy_per_capita",
+                       "oil_cons_change_pct", "oil_cons_change_twh",
+                       "oil_energy_per_capita"))
 
 # 3. Feature renaming
-# Print of the names of the features
-print(colnames(main[,37:46]))
-
-# Proper feature renaming
-colnames(main) = c(colnames(main[,1:36]), "gdp", "land_area", "agri_land_rate",
-                   "urbaniz_rate", "hdi", "particulate_pollution",
-                   "coal_reserves_2021", "oil_reserves_2020", "gas_reserves",
-                   "uranium_reserves_2019")
+colnames(main) = c(colnames(main[,1:36]), "land_area", "agri_land_rate",
+                   "urbaniz_rate", "hdi", "oil_reserves_2020", "gas_reserves",
+                   "coal_reserves_2021", "uranium_reserves_2019", "gdp",
+                   "particulate_pollution")
 
 ```
+\newpage
 
-## 4. Descriptive analyses
+# Chapter 4
+# Exploratory analyses
 
-We start the descriptive analyses by looking at the general renewable and low-carbon electricity generation trends. By "low-carbon," we refer to the electricity produced with substantially lower greenhouse gas emissions than conventional fossil fuel power generation [12], i.e., to the renewable and nuclear electricities. From now onward, we will refer to it with the acronym "LC."
+To fill.........................
+
+\newpage
+
+# Chapter 5
+# Descriptive analyses
+
+### 5.1 Global analyses
+
+We start the descriptive analyses by looking at the global low-carbon electricity generation trends. By **low-carbon** we refer to the electricity produced with substantially lower greenhouse gas emissions than conventional fossil fuel power generation [12]. In other words, the term low-carbon includes the renewable and nuclear sources. From now onward, we will refer to it with the acronym **LC**.
 
 ```{r descriptive_1, fig.width=8, fig.height = 6,include=TRUE, warning = FALSE}
 
-# 1. World electricity generation from low carbon sources
+# 1. World electricity generation from LC sources
 
 # a. Area plot of the total generation
 # Creation of the dataset
@@ -306,7 +287,7 @@ place = main[c("year", "low_carbon_electricity")] %>%
 gg1 = ggplot(place, aes(year, sum_lc)) +
   geom_area(alpha = 0.7, colour="white") +
   scale_x_continuous(limits = c(1965,2020), breaks = seq(1965, 2020, by = 5)) +
-  labs(title = "Figure 1. World electricity generation from low carbon sources",
+  labs(title = "World electricity generation from LC sources",
        x = "Year",
        y = "Terawatt-hours")
 
@@ -322,22 +303,25 @@ gg2 = ggplot(place, aes(year, sum_lc)) +
   geom_area(alpha = 0.7, colour="white") +
   scale_x_continuous(limits = c(1985,2020), breaks = seq(1985, 2020, by = 5)) +
   scale_y_continuous(limits = c(0,0.5)) +
-  labs(title = "Figure 2. % of world electricity generated from LC sources",
+  labs(title = "% of world electricity generated from LC sources",
        x = "Year",
        y = "% of terawatt-hours")
 
+# Visualization of gg1 and gg2
 grid.arrange(gg1,gg2)
 
 ```
-World's electricity production from LC sources constantly grew, going from a generation of less than 1000 TwH in 1965 to more than 10000 TwH in 2020, with an impressive average yearly growth of 21.6%. So let us now break down data by country.
+World's electricity production from LC sources constantly grew, going from a generation of less than 1000 TwH in 1965 to more than 10000 TwH in 2020, with an impressive average yearly growth of 21.6%. 
 
-As it is clear from *Figure 2*, a higher production
+Nonetheless, the second image clarifies an important point: even if the electricity generation from LC sources increased, the share of world electricity generated from LC sources has been stationary over the years, except for a timid increase from 2013 to 2020.
 
-```{r descriptive_2, fig.width=8, fig.height = 4, include=TRUE}
+```{r descriptive_2, fig.width=8, fig.height = 4, include=TRUE , warning = FALSE}
 
-# 2. World electricity generation from low carbon sources, grouped by countries
 
-# a. Create a vector containing the ISO codes of the nine countries with the highest LC electricity production in 2020
+# 2. World electricity generation from LC sources, grouped by countries
+
+# a. Creation of a vector containing the ISO codes of the nine countries with the highest
+# LC electricity production in 2020
 place = main[c("year", "low_carbon_electricity")] %>% mutate_all(~replace_na(.,0))
 place = cbind(iso_code = main$iso_code, place) %>%
   filter(year == 2020) %>%
@@ -360,8 +344,8 @@ place$iso_code = factor(place$iso_code,
 gg1 = ggplot(place, aes(year, sum_lc, fill = iso_code)) +
   geom_area(alpha=0.6, colour="white") +
   scale_x_continuous(limits = c(1965,2020), breaks = seq(1965, 2020, by = 5)) +
-  labs(title = "Figure 2. World electricity generation from low carbon sources",
-       subtitle = "Grouping by country",
+  labs(title = "World electricity generation from LC sources",
+       subtitle = "Grouped by country",
        x = "Year",
        y = "Terawatt-hours") +
   scale_fill_viridis_d(name = "Source", option = "E")
@@ -369,18 +353,21 @@ gg1 = ggplot(place, aes(year, sum_lc, fill = iso_code)) +
 # d. Share of electricity production by country in 2020
 place = filter(place, year == 2020)
 place$sum_lc = round(place$sum_lc / sum(place$sum_lc),2)
-colnames(place) = c(colnames(place[,1:2]),"perc_lc")
+place = place[,c(1,3)] %>% arrange(desc(sum_lc)) %>% as.data.frame()
+colnames(place) = c("ISO code","% LC generation")
 
-
+# Plot gg1 and table
 gg1
-place[,c(1,3)] %>% arrange(desc(perc_lc)) %>% as_tibble()
+kable(cbind(place[1:5,], place[6:10,]),caption = "Share of LC electricity generation by country, 2020")
 
 ```
 Not surprisingly, the generation of electricity from LC sources is not homogeneous between the countries: China and the USA own 41% of the electricity generated in 2020; the nine nations with the highest electricity generation from LC sources account for 69%.
 
+### 5.2 Analyses by source
+
 ```{r descriptive_3, fig.width=8, fig.height = 10, include=TRUE, warning = FALSE}
 
-# 3. World electricity generation from low carbon sources, grouped by source
+# 3. World electricity generation from LC sources, grouped by source
 
 # a. Area plot of the total electricity generation
 # Creation of the dataset
@@ -404,10 +391,9 @@ place$Type = factor(place$Type, levels = c("Nuclear", "Hydro", "Solar",
 gg1 = ggplot(place, aes(year, elect, fill = Type)) +
   geom_area(alpha=0.6 , size=.5, colour="white")+
   scale_x_continuous(limits = c(1965,2020), breaks = seq(1965, 2020, by = 5)) +
-  #xlim(1975,2020)??
   scale_y_continuous(limits = c(0,10500)) +
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
-  labs(title = "World electricity generation from low carbon sources",
+  labs(title = "World electricity generation from LC sources",
        subtitle = "Grouped by source",
        x = "Year",
        y = "Terawatt-hours")
@@ -435,15 +421,15 @@ place = main[c("year","hydro_electricity", "wind_electricity",
 place$Type = factor(place$Type, levels = c("Nuclear", "Hydro", "Solar", 
                                            "Wind", "Other"))
 
+# Creation of the plot
 gg2 = ggplot(place, aes(year, elect, fill = Type)) +
   geom_area(alpha=0.6 , size=.5, colour="white")+
   scale_x_continuous(limits = c(1965,2020), breaks = seq(1965, 2020, by = 5)) +
     scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
-      labs(title = "World electricity generation from low carbon sources",
+      labs(title = "World electricity generation from LC sources",
        subtitle = "Sum = 100, grouped by source",
        x = "Year",
        y = "% of terawatt-hours")
-
 
 # c. Line plot of the difference of generation with respect to 5 years in the past
 # Creation of the dataset
@@ -475,11 +461,12 @@ gg3 = ggplot(place, aes(year, world_elect, colour = Type)) +
   scale_x_continuous(limits = c(1970,2020)) +
   scale_y_continuous() +
   scale_color_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
-    labs(title = "World electricity generation from low carbon sources",
-       subtitle = "Difference w.r.t. 5 years in the past, grouped by source",
+    labs(title = "World electricity generation from LC sources",
+       subtitle = "Difference with respect to 5 years in the past, grouped by source",
        x = "Year",
        y = "Terawatt-hours")
 
+# Visualization of gg1, gg2 and gg3
 grid.arrange(gg1, gg2, gg3)
 
 
@@ -490,13 +477,15 @@ The plots allow us to identify three different phases in the history of LC elect
 
 2. **Golden age of nuclear electricity** (from the mid-'80s to mid-'00s). The electricity generation from nuclear reaches its peak, while the production of hydropower plants continues to grow linearly.
 
-3. **Golden age of renewables** (from the mid-'00s to nowadays). Nuclear power generation declined and gave way to renewables. In particular, the solar and wind generation skyrocketed.
+3. **Golden age of renewables** (from the mid-'00s to nowadays). Nuclear power generation declines and gives way to renewables. In particular, the solar and wind generation skyrockets.
 
-We are now interested in analizying the generation of electricity by LC sources in different areas. To do so, we aggregate world countries in six groups on the basis of geographical, economical and cultural factors.
+### 5.3 Analyses by macroregion
+
+We are now interested in analizying the generation of electricity by LC sources in different areas. To do so, we aggregate world countries in six macroregions on the basis of geographical, economical and cultural factors.
 
 1. **Developed countries**: Western Europe, Israel, USA, Canada, Australia, New Zealand, Japan, South Korea, Taiwan, Hong Kong and Macao.
 
-2. **Latin America and Caribbeans**: North and South America's countries, except of USA and Canada.
+2. **Latin America and Caribbean**: North and South America's countries, except of USA and Canada.
 
 3. **Eastern Europe**: former members of the Warsaw Pact (excluding Kazakhstan, Turkmenistan, Uzbekistan, Tajikistan and Kyrgyzstan) and former Yugoslavia.
 
@@ -507,7 +496,7 @@ We are now interested in analizying the generation of electricity by LC sources 
 6. **Asia**: non-aforementioned Asian countries.
 
 ```{r descriptive_4, fig.width=8, fig.height = 6, include=TRUE, warning = FALSE}
-# a. Create a vector for each group, containing the ISO-codes
+# a. Creation of a vector for each macroregion, containing the ISO-codes
 developed_countries = c("AUS", "AUT", "BEL", "CAN", "CYP", "DNK", "FRO", "FIN",
                         "FRA", "DEU", "GRC", "GRL", "HKG", "ISL", "IRL", "ISR",
                         "ITA", "JPN", "LUX", "MAC", "MLT", "NLD", "NZL", "NOR",
@@ -546,7 +535,6 @@ asian_countries = c("AFG", "ASM", "BGD", "BTN", "BRN", "KHM", "CHN", "COK",
                     "TKM", "TUV", "UZB", "VUT", "NIU")
 
 #b. Assign the grouping to each observation in "main"
-
 tag = rep(0, nrow(main))
 
 for(i in 1:length(tag)){
@@ -579,7 +567,6 @@ for(i in 1:length(tag)){
     }
   }
 }
-
 main = cbind(main, tag)
 
 # c.Plot of the world map
@@ -594,50 +581,18 @@ df_world = rbind(df_asian, df_east, df_middle, df_dev, df_africa, df_latin)
 
 map = joinCountryData2Map(df_world, joinCode = "ISO3",
                           nameJoinColumn = "tag")
-
 mapCountryData(map, nameColumnToPlot = "region", catMethod = "categorical",
                missingCountryCol = gray(.8),
                colourPalette = c("#35B779", "#FDE725", "#21908C", "#440154",
                                  "#8FD744", "#30678D"),
                mapTitle = "World grouping in macroregions")
-
-
 ```
 
-```{r descriptive_5, fig.width=8, fig.height = 10, include=TRUE, warning = FALSE}
+```{r descriptive_5, fig.width=8, fig.height = 8, include=TRUE, warning = FALSE}
 
-# 3. World electricity generation from LC sources, grouped by region
+# 3. World electricity generation from LC sources, grouped by macroregion
 
-# a. Scatter plot %2010 vs %2020
-# Creation of the dataset
-place = select(main, year, low_carbon_electricity, renewables_electricity,
-               electricity_generation) %>%
-  mutate_all(~replace_na(.,0)) %>%
-  cbind(., tag = main$tag) %>%
-  filter(year == 2010 | year == 2020 ) %>%
-  gather(key = "type", value = "lc_generation", -year, -electricity_generation, -tag) %>%
-  group_by(year, tag, type) %>%
-  summarize(perc_elec_from_lc = sum(lc_generation)*100 /sum(electricity_generation)) %>%
-  spread(key = year, value = perc_elec_from_lc)
-colnames(place) = c("tag", "Source", "ten", "twenty")
-
-place[place$Source  == "low_carbon_electricity", "Source"] = "LC"
-place[place$Source  == "renewables_electricity", "Source"] = "REN"
-
-# Creation of the plot
-gg1 = ggplot(place, aes(ten, twenty, col = Source)) +
-  geom_point(size = 3) +
-  geom_line(aes(group = tag), color = "black", linetype = "dashed") +
-  geom_text(aes(label = tag), hjust = 0, vjust = 1.5) +
-  scale_color_manual(values = c("#59E80C", "#141BDB")) +
-  labs(title = "Share of electricity generation from LC and renewable sources",
-       subtitle = "2010 vs 2020, grouped by region",
-       x = "% electricity generation 2010",
-       y = "% electricity generation 2020") +
-  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
-  geom_abline(intercept = 0, slope = 1.5, linetype = "dashed", color = "red")
-
-# b. LC generation by region
+# a. LC generation by macroregion
 # Creation of the dataset
 place = main[c("year","hydro_electricity", "wind_electricity", 
                "nuclear_electricity", "solar_electricity", 
@@ -655,24 +610,43 @@ place = main[c("year","hydro_electricity", "wind_electricity",
          -year, -tag)
 place$Type = factor(place$Type, levels = c("Nuclear", "Hydro", "Solar", 
                                            "Wind", "Other"))
+# Here we remove data for Sub-Saharan countries from 2000, as data is not available
+# for most of the countries
 for(i in 1:nrow(place)){
   if(place$year[i] < 2000 & place$tag[i] == "sub_african"){
     place$elect[i] = 0
   }
 }
 
-# Creation of the plot
-place[place$tag  == "asian", "tag"] = "Asian"
-place[place$tag  == "developed", "tag"] = "Developed"
-place[place$tag  == "east_europe", "tag"] = "Eastern Europe"
-place[place$tag  == "latin", "tag"] = "Latin America & Caribbeans"
-place[place$tag  == "middle_east", "tag"] = "Middle East & Northern Africa"
-place[place$tag  == "sub_african", "tag"] = "Sub-Saharan Africa"
+tag_modifier = function(place_data){
+  place_data[place_data$tag  == "asian", "tag"] = "Asian"
+  place_data[place_data$tag  == "developed", "tag"] = "Developed"
+  place_data[place_data$tag  == "east_europe", "tag"] = "Eastern Europe"
+  place_data[place_data$tag  == "latin", "tag"] = "Latin America & Caribbeans"
+  place_data[place_data$tag  == "middle_east", "tag"] = "Middle East & Northern Africa"
+  place_data[place_data$tag  == "sub_african", "tag"] = "Sub-Saharan Africa"
+  return(place_data)
+}
 
-gg2 = ggplot(place, aes(year, elect, fill = Type)) +
+source_modifier = function(place_data){
+  place_data[place_data$Source  == "nuclear_share_elec", "Source"] = "Nuclear"
+  place_data[place_data$Source  == "hydro_share_elec", "Source"] = "Hydro"
+  place_data[place_data$Source  == "solar_share_elec", "Source"] = "Solar"
+  place_data[place_data$Source  == "wind_share_elec", "Source"] = "Wind"
+  place_data[place_data$Source  == "other_renewables_share_elec", "Source"] = "Other"
+
+  place_data$Source = factor(place_data$Source, levels = c("Nuclear", "Hydro", "Solar", "Wind",
+                                               "Other"))
+  return(place_data)
+}
+
+place = tag_modifier(place)
+
+
+# Creation of the plot
+gg1 = ggplot(place, aes(year, elect, fill = Type)) +
   geom_area(alpha=0.6 , size=.5, colour="white")+
   scale_x_continuous(limits = c(1985,2020)) +
-  #xlim(1985,2020)??
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
   facet_wrap(~ tag, nrow = 2) +
   labs(title = "Share of electricity generation from LC sources",
@@ -680,64 +654,78 @@ gg2 = ggplot(place, aes(year, elect, fill = Type)) +
        x = "Year",
        y = "% of terawatt-hours")
 
-# c. focus on renewables excluding hydroelectric
+# b. Plot of renewables generation by macroregion, excluding hydropower
 # Creation of the dataset
 place = filter(place, Type == "Solar" | Type == "Wind" | Type == "Other")
 
 # Creation of the plot
-gg3 = ggplot(place, aes(year, elect, fill = Type)) +
+gg2 = ggplot(place, aes(year, elect, fill = Type)) +
   geom_area(alpha=0.6 , size=.5, colour="white")+
   scale_x_continuous(limits = c(1985,2020)) +
-  #xlim(1985,2020)??
   scale_fill_manual(values = c("#0060FA", "#141BDB", "#00296B")) +
-  facet_wrap(~ tag, nrow = 2)
+  facet_wrap(~ tag, nrow = 2) +
+  labs(x = "Year",
+       y = "% of terawatt-hours")
 
-
-grid.arrange(gg1, gg2, gg3, ncol=1)
+# Visualization of gg1, gg2 and gg3
+grid.arrange(gg1, gg2, ncol=1)
 
 ```
 
-A variety of conclusions can be drawn from the previous graphs. Here we present the four main findings:
+A variety of conclusions can be drawn from the previous graphs. Here we present the four main findings.
 
-1. The different areas are not homogeneous in electricity generation from low-carbon sources: Latin American countries have a more significant share; developed, Eastern European and Sub-Saharan and Asian follow; Middle-East generation is negligible.
+1. The different areas are **not homogeneous** in electricity generation from low-carbon sources: Latin American countries have a more significant share; developed, Eastern European and Sub-Saharan and Asian follow; Middle-East generation is negligible.
 
-2. Hydropower is an essential source of electricity in all the considered regions.
+2. **Hydropower** is an essential source of electricity in all the considered macroregion.
 
-3. Nuclear electricity is significant only in developed countries and Eastern Europe; its importance is comparable to hydropower generation in those regions.
+3. **Nuclear electricity** is significant only in developed countries and Eastern Europe; in those macroregions, its importance is comparable to hydropower generation.
 
-4. Developed countries drive non-hydropower renewable production. Nonetheless, it is also true that those sources are also rapidly becoming more relevant in Latin America and Asia.
+4. Developed countries drive **non-hydropower renewable** production. Nonetheless, it is also true that those sources are also rapidly becoming more relevant in Latin America and Asia.
 
-It is important to underline that a lower total electricity generation heavily influences Asian, Latin American, and (especially) Sub-Saharan generation rates, as the graph below shows.
+It is important to highlight also that a lower total electricity generation heavily influences Asian, Latin American, and (especially) Sub-Saharan generation rates, as the graph below shows.
 
 
 ```{r descriptive_7, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
-# d. Focus on generation per capita
+# Focus on electricity generation per capita
 # Creation of the dataset
 place = main[c("year","electricity_generation", "population")] %>%
   mutate_all(~replace_na(.,0)) %>%
   cbind(., tag = main$tag) %>%
   group_by(tag,year) %>%
   summarize(gen_per_capita = sum(electricity_generation)/sum(population))
-place$tag = factor(place$tag, levels = c("developed", "east_europe",
-                                         "middle_east", "asian", "latin",
-                                         "sub_african"))
+
+place = tag_modifier(place)
+place$tag = factor(place$tag, levels = c("Developed", "Eastern Europe",
+                                         "Middle East & Northern Africa",
+                                         "Asian", "Latin America & Caribbeans",
+                                         "Sub-Saharan Africa"))
+colnames(place) = c("Macroregion","year","gen_per_capita")
+
 
 # Creation of the plot
-ggplot(place, aes(year, gen_per_capita, color = tag)) +
+ggplot(place, aes(year, gen_per_capita, color = Macroregion)) +
   geom_line() +
   geom_point() +
   scale_x_continuous(limits = c(1985,2020), breaks = seq(1985, 2020, by = 5)) +
   scale_color_manual(values = c("#EA5555", "#F39C3C", "#ECD03F", "#6EB35E", "#4996C8",
-                                "#774ED8"))
+                                "#774ED8")) +
+  labs(title = "Electricity generation per capita",
+       subtitle = "Grouped by macroregion",
+       x = "Year",
+       y = "Per capita terawatt-hours")
+  
 
 ```
 
 The electricity generation from non-hydro renewable sources in Sub-Saharan Africa increases rapidly between 2011 and 2015. Therefore, we studied the behavior of the five countries in the region with the highest non-hydro renewable electricity generation in 2015. As the plot shows, the steep increase is simply due to an exploding generation from solar and wind sources in South Africa.
 
 ```{r descriptive_8, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
-# Extract the LC production grouped by source from 2011 to 2015 of the five countries with the highest renewables production in 2015
+suppressMessages({
+# Extract the LC production grouped by source from 2011 to 2015 of the five countries
+# with the highest renewables production in 2015
 
-#a. Extract ISO of 5 countries with the highest non-hydro renewables generation in 2015
+#a. Extract the ISO of five countries with the highest non-hydro renewables generation
+#   in 2015
 place = select(main, iso_code, year, renewables_electricity, hydro_electricity) %>%
   filter(year == 2015 & tag == "sub_african") %>%
   mutate(non_hydro_elec = renewables_electricity - hydro_electricity) %>%
@@ -746,83 +734,96 @@ place = select(main, iso_code, year, renewables_electricity, hydro_electricity) 
   top_n(5) %>%
   as.data.frame()
 
-# b. Create the dataset
+# b. Creation of the dataset
 place = select(main, year, iso_code, renewables_electricity, hydro_electricity) %>%
   filter(year <= 2015 & year >= 2011 & iso_code %in% place$iso_code) %>%
   mutate(non_hydro_elec = renewables_electricity - hydro_electricity)
+colnames(place) = c(colnames(place)[1], "ISO_code", colnames(place)[3:5])
 
-# c. Create the plot
-ggplot(place, aes(year, non_hydro_elec, color = iso_code)) +
-  geom_line() +
-  geom_point() +
-  scale_x_continuous(limits = c(2011,2015), breaks = seq(1985, 2020, by = 5)) +
-  scale_color_manual(values = c("#EA5555", "#F39C3C", "#ECD03F", "#6EB35E", "#4996C8"))
+# c. Creation the plot
+ggplot(place, aes(year, non_hydro_elec, color = ISO_code)) +
+  geom_line(size = 1) +
+  geom_point(size = 1.5) +
+  scale_x_continuous(limits = c(2011,2015), breaks = place$year) +
+  scale_color_manual(values = c("#EA5555", "#F39C3C", "#ECD03F", "#6EB35E", "#4996C8")) +
+    labs(title = "Share of electricity from non-hydro renewables",
+       subtitle = "Selection of Sub-Saharan African countries",
+       x = "Year",
+       y = "% of terawatt-hours")
+})
+
+  
 
 
 ```
 
-## Green score - Focus on source
+### 5.4 Green Score with focus on the sources
 
-In this section we aim to study which countries are nearer to the full LC target (i.e., to produce from LC sources all the electricity they consume). To do so, we created a Green Score, defined as the following ratio:
+In this section we aim to study which countries are nearer to the full LC target (i.e., to produce from LC sources all the electricity they consume). To do so, we create a **Green Score**, defined as the following ratio:
 \[
 \text{GS} = \frac{\text{electricity generated from LC sources}}{{\text{electricity demand}}}
 \]
-Note that in this section, descriptive analyses, we removed the countries with a smaller population than 500 000. The reason is that we expect those countries to be too small to have a significant independent electricity policy with respect to their neighbors.
+Note that in paragraphs 5.4 and 5.5 analyses we removed the countries with a smaller population than 500,000. The reason is that we expect those countries to be too small to have a significant independent electricity policy with respect to their neighbors.
 ```{r descriptive_9, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
-# Create the dataset
-# Note. x is computed as the squared root of the electricity demand per capita, scaled in the interval [0,1]. We plot the electricity demand per capita to distinguish if the high green score is due to low electricity consumption or good green policies. We chose the described scaling because it allows for spacing more points in the graph.
+# Note. x is computed as the squared root of the electricity demand per capita, scaled in
+# the interval [0,1]. We plot the electricity demand per capita to distinguish if the
+# high Green Score is due to low electricity consumption or good green policies. We
+# choose the described scaling because it allows for spacing more points in the graph.
+
+# Scatterplot of the Green Score in 2020 in each country
+# Creation of the dataset
 place = filter(main, (year == 2020 & population > 500000 & iso_code != "REU")) %>%
   transform(elec_demand_per_capita = (sqrt(electricity_demand / population) - min(sqrt(electricity_demand / population))) / (max(sqrt(electricity_demand / population)) - min(sqrt(electricity_demand / population))),
          green_score_renew = renewables_electricity / electricity_demand,
          green_score_lc = low_carbon_electricity / electricity_demand) %>%
   select(iso_code, elec_demand_per_capita, green_score_renew, green_score_lc)
 
-# Create the plot
+# Creation of the plot
 ggplot()+
-  geom_point(data = filter(place,
-                           iso_code != "LAO",
-                           iso_code != "BTN",
-                           iso_code != "PRY",
-                           iso_code != "NOR"),
+  geom_point(data = filter(place, iso_code != "LAO", iso_code != "BTN",
+                           iso_code != "PRY", iso_code != "NOR"),
              mapping = aes(elec_demand_per_capita, green_score_lc,
                            color = green_score_lc)) +
-  geom_text(data = filter(place,
-                          iso_code == "LAO" |
-                            iso_code == "BTN" |
-                            iso_code == "PRY" |
-                            iso_code == "NOR"),
+  geom_text(data = filter(place, iso_code == "LAO" | iso_code == "BTN" |
+                            iso_code == "PRY" | iso_code == "NOR"),
             mapping = aes(elec_demand_per_capita, green_score_lc,
-                          label = iso_code,
-                          color = green_score_lc)) +
+                          label = iso_code, color = green_score_lc)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   scale_color_gradient(low = "#ECD03F", high = "#59E80C", na.value = "#59E80C",
-                       limits = c(0,1),
-                       guide = "none") +
-  labs(title = "Green score for world countries, 2020",
+                       limits = c(0,1), guide = "none") +
+  labs(title = "Green Score of world countries, 2020",
        x = "Scaled electricity demand per capita",
-       y = "Green score")
+       y = "Green Score")
 ```
-The plot highlights four main outliers: Laos, Bhutan, and Paraguay, with an overscaled green score and a low electricity demand per capita; Norway, with a positive green score while being the country with the highest electricity demand per capita. We want to understand if they have shared features that allow us to explain their outperformance.
+The plot highlights **four main outliers**: Laos, Bhutan, and Paraguay, with an overscaled Green Score and a low electricity demand per capita; Norway, with a positive Green Score while being the country with the highest electricity demand per capita. We want to understand if they have shared features that allow us to explain their outperformance.
 
 ```{r descriptive_10, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 
-# Create the dataset
+# Barplot of the electricity generation mix in LAO, BTN, PRY and NOR
+# Creation of the dataset
 place = filter(main, (year == 2020 & (iso_code == "LAO" | iso_code == "BTN" |
                                         iso_code == "PRY" | iso_code == "NOR"))) %>%
   select(iso_code, solar_share_elec, wind_share_elec, hydro_share_elec,
          nuclear_share_elec, other_renewables_share_elec) %>%
   gather(key = "Source", value = "value", -iso_code)
 
-place[place$Source  == "nuclear_share_elec", "Source"] = "Nuclear"
-place[place$Source  == "hydro_share_elec", "Source"] = "Hydro"
-place[place$Source  == "solar_share_elec", "Source"] = "Solar"
-place[place$Source  == "wind_share_elec", "Source"] = "Wind"
-place[place$Source  == "other_renewables_share_elec", "Source"] = "Other"
+# The following function modify the names of the sources to enchance the visualization
+source_modifier = function(place_data){
+  place_data[place_data$Source  == "nuclear_share_elec", "Source"] = "Nuclear"
+  place_data[place_data$Source  == "hydro_share_elec", "Source"] = "Hydro"
+  place_data[place_data$Source  == "solar_share_elec", "Source"] = "Solar"
+  place_data[place_data$Source  == "wind_share_elec", "Source"] = "Wind"
+  place_data[place_data$Source  == "other_renewables_share_elec", "Source"] = "Other"
 
-place$Source = factor(place$Source, levels = c("Nuclear", "Hydro", "Solar", "Wind",
+  place_data$Source = factor(place_data$Source, levels = c("Nuclear", "Hydro", "Solar", "Wind",
                                                "Other"))
+  return(place_data)
+}
 
-# Create the plot
+place = source_modifier(place)
+
+
+# Creation of the plot
 ggplot(place, aes(x = iso_code, y = value, fill = Source)) +
   geom_bar(position = "stack", stat = "identity", alpha = 0.6, colour = "white") +
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
@@ -832,12 +833,15 @@ ggplot(place, aes(x = iso_code, y = value, fill = Source)) +
 
 
 ```
-The high performance of the countries is due to a dominant hydroelectric generation. For example, Laos aims to become the "Battery of Southeast Asia" by further exploiting its impressive hydropower potential [13]. So those countries can achieve such an impressive result because of a resource not available everywhere. Nonetheless, some countries have great hydropower generation but do not exploit it: for instance, the Democratic Republic of Congo has a potential of 100.000 MW (more than four times the biggest hydropower plant in the world, the Three Gorges Dam [14]), but exploit only 2.5% of it due to political instability and lack of investments [15].
+The high performance of the countries is due to a **dominant hydroelectric generation**. For example, further research on the topic highlights that Laos aims to become the "Battery of Southeast Asia" by further exploiting its impressive hydropower potential [13]. So those countries can achieve such an impressive result because of a resource not available everywhere.
 
-We then analyze further the correlation between each LC source and the green score.
+Nonetheless, some countries have great hydropower generation but do not exploit it: for instance, the Democratic Republic of Congo has a potential of 100.000 MW (more than four times the biggest hydropower plant in the world, the Three Gorges Dam [14]), but uses only 2.5% of it due to political instability and lack of investments [15].
+
+We then analyze further the correlation between each LC source and the Green Score.
 ```{r descriptive_11, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 
-# Create the dataset
+# Scatterplot of the green Score VS share of electricity produced from each LC source
+# Creation of the dataset
 place = filter(main, year == 2020) %>%
   transform(green_score_lc = (low_carbon_electricity / electricity_demand)) %>%
   select(iso_code, green_score_lc, nuclear_share_elec, hydro_share_elec,
@@ -848,16 +852,9 @@ place = filter(main, year == 2020) %>%
   # We excluded countries with an irrelevant production from each source
   filter(value > 1)
 
-place[place$Source  == "nuclear_share_elec", "Source"] = "Nuclear"
-place[place$Source  == "hydro_share_elec", "Source"] = "Hydro"
-place[place$Source  == "solar_share_elec", "Source"] = "Solar"
-place[place$Source  == "wind_share_elec", "Source"] = "Wind"
-place[place$Source  == "other_renewables_share_elec", "Source"] = "Other"
+place = source_modifier(place)
 
-place$Source = factor(place$Source, levels = c("Nuclear", "Hydro", "Solar", "Wind",
-                                               "Other"))
-
-# Create the plot
+# Creation of the plot
 ggplot(filter(place, iso_code != "LAO", iso_code != "BTN", iso_code != "PRY"),
        aes(value, green_score_lc, color = value)) +
   geom_point() +
@@ -867,19 +864,25 @@ ggplot(filter(place, iso_code != "LAO", iso_code != "BTN", iso_code != "PRY"),
                        limits = c(0,40),
                        guide = "none") +
   facet_wrap(~Source, nrow = 2) +
-  labs(title = "Green score VS LC generation by source, 2020",
+  labs(title = "Green Score VS share of LC generation by source, 2020",
        x = "% gen. from LC source",
-       y = "Green score")
+       y = "Green Score")
+
+# Note. "loess" is a statistical technique used for estimating smooth curves in
+# scatterplot data. It works by fitting multiple local regression models
+# to different subsets of the data, allowing it to capture non-linear patterns and
+# relationships between variables. It was introduced in the following plot only to
+# highlight better the trends from a graphical point of view.
 
 ```
-The plot confirms the correlation between the green score and the electricity generation from hydropower. It also shows an important link with nuclear power production but not with solar, wind, and other sources.
+The plot confirms the correlation between the Green Score and the electricity generation from hydropower. It also shows an important link with nuclear power production but not with solar, wind, and other sources.
 
-## Green score - Focus on macroregions
+### 5.5 Green Score with focus on the macroregions
 
-In this final section of descriptive analyses we focus on the analysis of the green score in each country.
+In this final section of descriptive analyses we focus on the analysis of the Green Score in each country.
 
 ```{r descriptive_12, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
-
+# Boxplot of the Green Score
 # Creation of the dataset
 place = filter(main, year == 2020) %>%
   transform(green_score_lc = (low_carbon_electricity / electricity_demand)) %>%
@@ -892,87 +895,95 @@ place[place$tag  == "latin", "tag"] = "L. Am. & C."
 place[place$tag  == "middle_east", "tag"] = "M. East & N. Africa"
 place[place$tag  == "sub_african", "tag"] = "S.S. Africa"
 
+colnames(place) = c("iso_code", "Macroregion", "green_score_lc")
+
 # Creation of the plot
-ggplot(place, aes(x = tag, y = green_score_lc)) +
-  geom_boxplot(aes(fill = tag)) +
+ggplot(place, aes(x = Macroregion, y = green_score_lc)) +
+  geom_boxplot(aes(fill = Macroregion)) +
   ylim(0,1.25) +
+  scale_fill_manual(values = c("#EA5555", "#F39C3C", "#ECD03F", "#6EB35E", "#4996C8",
+                                "#774ED8")) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
     labs(title = "Boxplots of the Green Score, 2020",
-         subtitle = "By macroregion",
+         subtitle = "Grouped by macroregion",
        x = "",
-       y = "Green score")
+       y = "Green Score")
 
 ```
 
-The leading macroregion by green score comprises the developed countries, followed by Eastern Europe, Sub-Saharian Africa, Asia, and Latin America & Caribbeans. The Middle East & Northern Africa has significantly lower score compared to other areas. Let us now explore the countries of each area separately.
+The leading macroregion by Green Score comprises the **developed countries**, followed by Eastern Europe, Sub-Saharian Africa, Asia, and Latin America & Caribbeans. The Middle East & Northern Africa has significantly lower score compared to other areas. Let us now explore each area separately.
 
 ```{r descriptive_13, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
-
+# Barplot of the Green Score 
 # Creation of the dataset
 place = filter(main, year == 2020, !is.na(other_renewables_share_elec),
                population >= 500000) %>%
   transform(ratio = (low_carbon_electricity / (electricity_demand * low_carbon_share_elec))) %>%
-  transform(green_solar = ratio * solar_share_elec,
-            green_wind = ratio * wind_share_elec,
-            green_hydro = ratio * hydro_share_elec,
-            green_nuclear = ratio * nuclear_share_elec,
-            green_other = ratio * other_renewables_share_elec) %>%
-  select(iso_code, tag, green_solar, green_wind,
-         green_hydro, green_nuclear, green_other) %>%
+  transform(solar_share_elec = ratio * solar_share_elec,
+            wind_share_elec = ratio * wind_share_elec,
+            hydro_share_elec = ratio * hydro_share_elec,
+            nuclear_share_elec = ratio * nuclear_share_elec,
+            other_renewables_share_elec = ratio * other_renewables_share_elec) %>%
+  select(iso_code, tag, solar_share_elec, wind_share_elec,
+         hydro_share_elec, nuclear_share_elec, other_renewables_share_elec) %>%
   # There are NaN values obtain because of division by zero. We want them to be 0
   mutate(across(where(is.numeric), ~ ifelse(is.nan(.), 0, .))) %>%
   # There are NA values. We want to remove them
   gather(key = "Source", value = "value", -iso_code, -tag)
 
-place[place$Source  == "green_nuclear", "Source"] = "Nuclear"
-place[place$Source  == "green_hydro", "Source"] = "Hydro"
-place[place$Source  == "green_solar", "Source"] = "Solar"
-place[place$Source  == "green_wind", "Source"] = "Wind"
-place[place$Source  == "green_other", "Source"] = "Other"
+place = source_modifier(place)
 
-place$Source = factor(place$Source, levels = c("Nuclear", "Hydro", "Solar", "Wind",
-                                               "Other"))
-
-# Creation of the plot
+# Creation of the plot for the developed countries
 ggplot(filter(place, tag == "developed"),
        aes(x = reorder(iso_code, value), y = value, fill = Source)) +
   geom_bar(position = "stack", stat = "identity", alpha = 0.6, colour = "white") +
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
+  scale_y_continuous(breaks = seq(0, 1.2, by = 0.2)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(title = "Green score in developed countries, by source, 2020",
+  labs(title = "Green Score in developed countries, 2020",
+       subtitle = "Grouped by source",
        x = "",
-       y = "Green score")+ 
+       y = "Green Score") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 
 
 
 ```
-The developed countries with the highest green scores are Sweden, Norway, Switzerland, and France. The sources are heterogeneous: while countries like Norway, Switzerland, and Canada are mainly driven by hydropower, others like France and Belgium mainly generate electricity from nuclear power, and others still, like Denmark and Ireland, are mainly driven by other sources.
+The developed countries with the highest Green Scores are **Sweden**, Norway, Switzerland, and France, while the ones with the lowest values are Macao, Hong Kong, Israel and Malta.
+
+The LC sources are heterogeneous: while countries like Norway, Switzerland, and Canada are mainly driven by hydropower, others like France and Belgium mainly generate electricity from nuclear power, and others still, like Denmark and Ireland, are mainly driven by non-hydro renewables.
+
+It is also interesting to highlight that the developed Asian countries have a lower score compared to the others: the second best performing country, Japan, outperforms only Australia, Luxembourg, Cyprus and Malta.
 
 ```{r descriptive_14, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+# Creation of the plot for Eastern Europe
 ggplot(filter(place, tag == "east_europe"),
        aes(x = reorder(iso_code, value), y = value, fill = Source)) +
   geom_bar(position = "stack", stat = "identity", alpha = 0.6, colour = "white") +
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
+    scale_y_continuous(breaks = seq(0, 1, by = 0.2)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(title = "Green score in Eastern European countries, by source, 2020",
+  labs(title = "Green Score in Eastern Europe, 2020",
+       subtitle = "Grouped by source",
        x = "",
-       y = "Green score") +
+       y = "Green Score") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-No country in Eastern Europe is near a Green Score equal to 1; the best-performing one is Slovenia, with a score of 0.72. The countries in the region mainly produce LC electricity through hydro and nuclear sources.
+No country in Eastern Europe is near a Green Score equal to 1: the best-performing one is **Slovenia**, with a score of 0.72. Follow Slovakia, Albania and Armenia. In the region there are also three countries with a score near zero: Belarus, Azerbaijan and Moldova. As the barplot shows, Eastern European countries mainly produce LC electricity through hydro and nuclear sources.
+
 ```{r descriptive_15, fig.width=8, fig.height = 12, include=TRUE, warning = FALSE}
 # Creation of the plot for Latin America & Caribbean
 gg1 = ggplot(filter(place, tag == "latin", iso_code != "PRY"),
        aes(x = reorder(iso_code, value), y = value, fill = Source)) +
   geom_bar(position = "stack", stat = "identity", alpha = 0.6, colour = "white") +
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
+    scale_y_continuous(breaks = seq(0, 1.2, by = 0.2)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(title = "Green score in L. America & Caribbean, Asia, and Sub-Saharan countries, 2020",
-       subtitle = "by source. Note: Paraguay, Laos and Bhutan removed being outliers",
+  labs(title = "Green Score in L. America & Caribbean, Asia, and Sub-Saharan countries, 2020",
+       subtitle = "Grouped by source. Note: Paraguay, Laos and Bhutan removed being outliers",
        x = "",
-       y = "Green score") +
+       y = "Green Score") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Creation of the plot for the Asian countries
@@ -980,9 +991,10 @@ gg2 = ggplot(filter(place, tag == "asian", iso_code != "LAO", iso_code != "BTN")
        aes(x = reorder(iso_code, value), y = value, fill = Source)) +
   geom_bar(position = "stack", stat = "identity", alpha = 0.6, colour = "white") +
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
+    scale_y_continuous(breaks = seq(0, 1, by = 0.2)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   labs(x = "",
-       y = "Green score") +
+       y = "Green Score") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # creation of the plot for the Sub-Saharan Africa
@@ -990,52 +1002,72 @@ gg3 = ggplot(filter(place, tag == "sub_african"),
        aes(x = reorder(iso_code, value), y = value, fill = Source)) +
   geom_bar(position = "stack", stat = "identity", alpha = 0.6, colour = "white") +
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
+    scale_y_continuous(breaks = seq(0, 1.2, by = 0.2)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   labs(x = "",
-       y = "Green score") +
+       y = "Green Score") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-print(grid.arrange(gg1, gg2, gg3, ncol=1))
-
-# Print electricity production in Tajikistan, Kysrgikistan, and North Korea compared to China
-place2 = filter(main, year == 2020 &
-                 (iso_code == "TJK" | iso_code == "KGZ" | iso_code == "PRK" | iso_code == "CHN")) %>%
-  select(iso_code, electricity_demand, population) %>%
-  summarize(iso_code, demand_percapita = electricity_demand / population)
-print(place2)
+# Visualization of the plots
+grid.arrange(gg1, gg2, gg3, ncol=1)
 
 ```
-We grouped the findings for Latin America & Caribbean, Asia, and Sub-Saharan countries because their electricity mixes are similar and mainly driven by hydropower. Here are the main observations:
-1. some Latin American and Caribbean countries also have significant production from other sources, notably Uruguay, which mainly produces electricity through wind power;
-2. Kenya is the only Sub-Saharan country with a good green score that generates significantly from non-hydropower source, specifically geothermal []
-3. The Asian countries with a high green score are those with the lowest electricity generation per capita: Tajikistan, Kyrgyzstan, and North Korea.
+We grouped the findings for Latin America & Caribbean, Asia, and Sub-Saharan countries because their electricity mixes are similar and mainly driven by hydropower.
+
+The **best-performing** countries in each macroregion are Costa Rica, Uruguay, and Ecuador for Latin America & Caribbean; Tajikistan, Kyrgyzstan, and North Korea for Asia; Ethiopia, Mozambique, and Uganda for Sub-Saharan Africa. Instead, the countries with the lowest Green Score are respectively: Haiti, Porto Rico, and Trinidad & Tobago; Timor Est, Turkmenistan, and Solomon Islands; Botswana, Guinea-Bissau, Gambia, Djibouti, and Comoros (tied with totally fossil-dependent electricity generation).
+
+Here are the other main observations:
+
+1. some Latin American and Caribbean countries also have significant production from other sources, notably **Uruguay**, which mainly produces electricity through wind power;
+
+2. **Kenya** is the only Sub-Saharan country with a good Green Score that generates significantly from non-hydropower sources, specifically geothermal [16]
 
 ```{r descriptive_16, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
-# Creation of the plot
+# Creation of the plot for the North African & Middle-East countries
 ggplot(filter(place, tag == "middle_east"),
        aes(x = reorder(iso_code, value), y = value, fill = Source)) +
   geom_bar(position = "stack", stat = "identity", alpha = 0.6, colour = "white") +
   scale_fill_manual(values = c("#B2FF00", "#05B6FF", "#0060FA", "#141BDB", "#00296B")) +
+    scale_y_continuous(breaks = seq(0, 1, by = 0.2)) +
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
-  labs(title = "Green score in Middle East & North Africa, by source, 2020",
+  labs(title = "Green Score in Middle East & North Africa 2020",
+       subtitle = "Grouped by source",
        x = "",
-       y = "Green score") +
+       y = "Green Score") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-We conclude the descriptive analyses by looking at the performance of Northern Africa and Middle East countries. The best performing country, Turkey, has a green score smaller than 0.5. As the following table shows, this is mainly due to an heavy exploitation of fossil sources.
+We conclude the descriptive analyses by looking at the performance of Northern Africa and Middle East countries. Consistently with the findings at paragraph 5.3, the barplot shows that all the countries fail to reach a good performance: the best performing one, **Turkey**, has a Green Score smaller than 0.5. As the following table shows, this is mainly due to an large availability of oil and gas.
 
 ```{r descriptive_17, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
-# Creation of the dataset and of the table
-filter(main, tag == "middle_east", year == 2020) %>%
-  select(iso_code, fossil_share_elec) %>%
-  arrange(desc(fossil_share_elec))
+# Creation of a dataset containing per capita average fossil reserves in Middle-East
+# and Northern African countries VS the rest of the world
+place = filter(main, year == 2020, tag == "middle_east") %>%
+  select(population, oil_reserves_2020, gas_reserves) %>%
+  mutate_all(~replace_na(.,0)) %>%
+  summarize(oil_reserves_2020 = round(mean(oil_reserves_2020 / population),2),
+            gas_reserves = round(mean(gas_reserves / population),2))
+
+place2 = filter(main, year == 2020, tag != "middle_east") %>%
+  select(population, oil_reserves_2020, gas_reserves) %>%
+  mutate_all(~replace_na(.,0)) %>%
+  summarize(oil_reserves_2020 = round(mean(oil_reserves_2020 / population),2),
+            gas_reserves = round(mean(gas_reserves / population),2))
+
+place = rbind(place, place2)
+place = cbind(c("Middle East & North Africa", "Other countries"), place)
+colnames(place) = c("Macroregion", "Oil (2020)", "Gas (2020)")
+kable(place, caption = "Per capita reserves of fossil electricity sources")
+
 ```
+\newpage
+
+# Chapter 6
+# Modeling
 
 
 
-
-## Bibliografia e link
+# Bibliografia e link
 [1] https://github.com/owid/energy-data
 
 [2] https://data.worldbank.org/indicator/NY.GDP.MKTP.KD
@@ -1067,53 +1099,3 @@ filter(main, tag == "middle_east", year == 2020) %>%
 [15] https://www.andritz.com/hydro-en/hydronews/hydropower-africa/democratic-rep-congo
 
 [16] https://lowcarbonpower.org/region/Kenya
-
-
-
-## Prova
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-La prova del plot di Giacomo:
-
-```{r pressure, echo=FALSE}
-ggplot(main, aes(x = year)) + geom_histogram(bins = 123) + ggtitle(paste("year distribution"))
-for (i in 0:0){
-  i1 <- colnames(main)[i*3+5]
-  i2 <- colnames(main)[i*3+6]
-  i3 <- colnames(main)[i*3+7]
-  p11 <- ggplot(main, aes_string(x = i1)) + geom_histogram(bins = 100) + ggtitle(paste(i1, " distribution"))
-  nacount = main %>%
-    group_by(year) %>%
-    summarize(na_perc = sum(is.na(!!sym(i1)))/n())
-  p12 <- ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) + ggtitle(paste(i1, " percentage of NA's by Year"))
-  t1 <- tableGrob(summary(main[i1]))
-  t1$heights <- unit(rep(1, nrow(t1) + 1), "null")
-  p21 <- ggplot(main, aes_string(x = i2)) + geom_histogram(bins = 100) + ggtitle(paste(i2, " distribution"))
-  nacount = main %>%
-    group_by(year) %>%
-    summarize(na_perc = sum(is.na(!!sym(i2)))/n())
-  p22 <- ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) + ggtitle(paste(i2, " percentage of NA's by Year"))
-  t2 <- tableGrob(summary(main[i2]))
-  t2$heights <- unit(rep(1, nrow(t2) + 1), "null")
-  p31 <- ggplot(main, aes_string(x = i3)) + geom_histogram(bins = 50) + ggtitle(paste(i3, " distribution"))
-  nacount = main %>%
-    group_by(year) %>%
-    summarize(na_perc = sum(is.na(!!sym(i3)))/n())
-  p32 <- ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) + ggtitle(paste(i3, " percentage of NA's by Year"))
-  t3 <- tableGrob(summary(main[i3]))
-  t3$heights <- unit(rep(1, nrow(t3) + 1), "null")
-  grid.arrange(p11, p12, t1, p21, p22, t2, p31, p32, t3, widths = c(0.4, 0.4, 0.2), heights = c(0.33, 0.33, 0.33), ncol = 3)
-}
-
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
