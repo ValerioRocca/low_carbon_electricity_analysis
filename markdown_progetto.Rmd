@@ -44,56 +44,70 @@ Academic Year 2022/2023
 
 \newpage
 
+\setcounter{page}{1}
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-options(dplyr.summarise.inform = FALSE)
-options(countrycode_warning = FALSE)
-options(dplyr.print_max = Inf)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(viridis)
-library(car) # for box-cox
-library(rworldmap) #for world map
-library(glmnet)
+library(rworldmap)
+ library(glmnet) #To check if it's necessary
 library(readxl)
 library(gridExtra)
 library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+options(dplyr.summarise.inform = FALSE)
+options(countrycode_warning = FALSE)
+options(dplyr.print_max = Inf)
 suppressMessages(library(ggplot2))
 suppressMessages(library(rworldmap))
 
 ```
-\large
+\Large
 \textbf{Contents}
 
-\begin{tabular}{l@{\hskip 8em}r}
-1. \textbf{Abstract} & \textbf{X} \\
-2. Obtaining data & X \\
-3. Data pre-processing & X \\
-4. Exploratory analyses & X \\
-5. Descriptive analyses & X \\
-\hspace{1em} 5.1 Global analyses & X \\
-\hspace{1em} 5.2 Analyses by source & X \\
-\hspace{1em} 5.3 Analyses by macroregion & X \\
-\hspace{1em} 5.4 Green Score with focus on the sources & X \\
-\hspace{1em} 5.5 Green Score with focus on the macroregions & X \\
-6. Modeling & X \\
-Bibliography and links & X \\
-\end{tabular}
-
-\vspace{1.5cm}
+\vspace{0.5cm}
 
 \small
+
+\begin{tabular}{l@{\hskip 27em}r}
+
+\textbf{Abstract} & \textbf{2} \\
+
+1. \textbf{Obtaining data} & \textbf{3} \\
+
+2. \textbf{Data pre-processing} & \textbf{X} \\
+
+3. \textbf{Exploratory analyses} & \textbf{X} \\
+
+4. \textbf{Descriptive analyses} & \textbf{X} \\
+\hspace{1em} 4.1 Global analyses & X \\
+\hspace{1em} 4.2 Analyses by source & X \\
+\hspace{1em} 4.3 Analyses by macroregion & X \\
+\hspace{1em} 4.4 Green Score with focus on the sources & X \\
+\hspace{1em} 4.5 Green Score with focus on the macroregions & X \\
+
+5. \textbf{Modeling} & \textbf{X} \\
+
+\textbf{Sitography} & \textbf{X} \\
+
+\end{tabular}
+
+\newpage
+
+# Abstract
+This report presents a comprehensive analysis of low-carbon electricity generation, focusing on its history, current trends, and future prospects.
+
+The analysis begins by examining quantitatively the historical context of low-carbon electricity generation, tracing its origins and evolution over time and by proposing insights on different sources and world areas.
+
+Next, the report delves into the current trends and status of low-carbon electricity generation. By exploiting a tailored yet simple measure, the Green Score, it provides a detailed overview of various sources such as nuclear, solar, wind, and hydropower, along with their contributions to the global energy mix.
+
+Parte di Giacomo
 
 \newpage
 
 # Chapter 1
-# Abstract
-This is the abstract
-
-\newpage
-
-# Chapter 2
 # Obtaining data
 We could not find a single dataset containing all the information of interest. Thus, the project's first step is merging multiple datasets into one. The primary one is the *Energy dataset* by Our World in Data (from now onwards referred to as "OWID") [1], which contains various time series for each world country regarding energy and electricity production and consumption.
 
@@ -102,8 +116,6 @@ We could not find a single dataset containing all the information of interest. T
 # Import the Energy dataset
 main = read.csv("datasets//Total_energy_data.csv")
 ```
-
-
 We then merge the following datasets into it:
 
 - *GDP (constant 2015 US$)* by World Bank [2], which contains the time series of the GDP in each country from 1960 to 2021, measured in constant 2015 USA dollars.
@@ -117,11 +129,11 @@ We then merge the following datasets into it:
 - *Natural gas proved reserves* by OWID [10], which contains the time series of the reserves of natural gas in each country from 1980 to 2020 (CHECK BC THE LINK HAS ONLY 2020);
 - *Uranium proved reserves* by OECD [11], which contains uranium reserves in each country in 2019, measured in tonnes.
 
-Merging presents three critical issues, which are listed below, together with the implemented solutions.
+Merging presents three critical issues listed below, together with the implemented solutions.
 
-1. Time series are recorded for different years. We tackled this problem by merging through left join: all the rows of the *Energy dataset* are included, while rows from the other datasets are included if there is a match; otherwise, a NA value is added. In order to perform correctly the left join, we need to remove the countries in *Energy dataset* without an ISO code. This is the case for some semi-autonomous territories inside of a country (e.g., Wake Island), countries that no longer exist (e.g., Yugoslavia), and country groupings (e.g., OPEC countries). We decide to remove those observations.
+1. Time series are recorded for different years. We tackled this problem by merging through left join: all the rows of the *Energy dataset* are included, while rows from the other datasets are included if there is a match; otherwise, a NA value is added. In order to perform correctly the left join, we need to remove the countries in the *Energy dataset* without an ISO code. This is the case for some semi-autonomous territories inside of a country (e.g., Wake Island), countries that no longer exist (e.g., Yugoslavia), and country groupings (e.g., OPEC countries). Therefore, we decide to remove those observations.
 2. Coal, oil, and uranium reserves are stationary values, as time series for those variables are not publicly available. Therefore, we approached the issue by considering the reserves fixed through time, as it does not affect the quality of the analyses.
-3. *GDP (constant 2015 US$)* dataset contains a column for each year, while the other time series datasets format the years using a specific variable. We modify the structure of *GDP* to fit the others'.
+3. *GDP (constant 2015 US$)* dataset contains a column for each year, while the other time series datasets format the years using a specific variable. Therefore, we modify the structure of *GDP* to fit the others'.
 
 ```{r obtain_data, include=TRUE, warning = FALSE}
 
@@ -183,15 +195,15 @@ rm(death_rates)
 \newpage
 
 
-# Chapter 3
+# Chapter 2
 # Data pre-processing
 
 In this section, we present the pre-processing activities performed.
 
-1. **Units selection**, computed over the *Energy dataset*. Already partially computed and explained in the previous section, in this phase we also removed two regions with too many missing values: Anctartica and Western Sahara.
+1. **Units selection**, computed over the *Energy dataset*. Already partially computed and explained in the previous section, in this phase we also removed two regions with too many missing values: Antarctica and Western Sahara.
 2. **Feature selection**, computed over the *Energy dataset*. From the original 129 variables, we kept only 36 relevant for the analyses.
 3. **Feature renaming**, computed over *main*, as the features merged to the *Energy dataset* have inconvenient names.
-4. **Feature addition**, computed over *main* in paragraph 5.3. The new categorical variable groups the world countries into six macroregions.
+4. **Feature addition**, computed over *main* in paragraph 4.3. The new categorical variable groups the world countries into six macroregions.
 
 
 ```{r data_preproc, include=TRUE, warning = FALSE}
@@ -258,19 +270,19 @@ colnames(main) = c(colnames(main[,1:36]), "land_area", "agri_land_rate",
 ```
 \newpage
 
-# Chapter 4
+# Chapter 3
 # Exploratory analyses
 
 To fill.........................
 
 \newpage
 
-# Chapter 5
+# Chapter 4
 # Descriptive analyses
 
-### 5.1 Global analyses
+### 4.1 Global analyses
 
-We start the descriptive analyses by looking at the global low-carbon electricity generation trends. By **low-carbon** we refer to the electricity produced with substantially lower greenhouse gas emissions than conventional fossil fuel power generation [12]. In other words, the term low-carbon includes the renewable and nuclear sources. From now onward, we will refer to it with the acronym **LC**.
+We start the descriptive analyses by looking at the global low-carbon electricity generation trends. By **low-carbon**, we refer to the electricity produced with substantially lower greenhouse gas emissions than conventional fossil fuel power generation [12]. In other words, the term low-carbon includes renewable and nuclear sources. We will now refer to it with the acronym **LC**.
 
 ```{r descriptive_1, fig.width=8, fig.height = 6,include=TRUE, warning = FALSE}
 
@@ -363,7 +375,7 @@ kable(cbind(place[1:5,], place[6:10,]),caption = "Share of LC electricity genera
 ```
 Not surprisingly, the generation of electricity from LC sources is not homogeneous between the countries: China and the USA own 41% of the electricity generated in 2020; the nine nations with the highest electricity generation from LC sources account for 69%.
 
-### 5.2 Analyses by source
+### 4.2 Analyses by source
 
 ```{r descriptive_3, fig.width=8, fig.height = 10, include=TRUE, warning = FALSE}
 
@@ -479,17 +491,17 @@ The plots allow us to identify three different phases in the history of LC elect
 
 3. **Golden age of renewables** (from the mid-'00s to nowadays). Nuclear power generation declines and gives way to renewables. In particular, the solar and wind generation skyrockets.
 
-### 5.3 Analyses by macroregion
+### 4.3 Analyses by macroregion
 
-We are now interested in analizying the generation of electricity by LC sources in different areas. To do so, we aggregate world countries in six macroregions on the basis of geographical, economical and cultural factors.
+We are now interested in analyzing electricity generation by LC sources in different areas. To do so, we aggregate world countries into six macroregions based on geographical, economic, and cultural factors.
 
-1. **Developed countries**: Western Europe, Israel, USA, Canada, Australia, New Zealand, Japan, South Korea, Taiwan, Hong Kong and Macao.
+1. **Developed countries**: Western Europe, Israel, USA, Canada, Australia, New Zealand, Japan, South Korea, Taiwan, Hong Kong, and Macao.
 
-2. **Latin America and Caribbean**: North and South America's countries, except of USA and Canada.
+2. **Latin America and the Caribbean**: North and South America's countries, except for USA and Canada.
 
-3. **Eastern Europe**: former members of the Warsaw Pact (excluding Kazakhstan, Turkmenistan, Uzbekistan, Tajikistan and Kyrgyzstan) and former Yugoslavia.
+3. **Eastern Europe**: former members of the Warsaw Pact (excluding Kazakhstan, Turkmenistan, Uzbekistan, Tajikistan, and Kyrgyzstan) and former Yugoslavia.
 
-4. **Middle East and Northern Africa**: Morocco, Algeria, Tunisia, Libya, Egypt, Jordan, Palestine, Lebanon, Syria, Turkey, Iraq, Iran, Kuwait, Saudi Arabia, Yemen, Oman, United Arab Emirates, Bahrain and Qatar.
+4. **Middle East and Northern Africa**: Morocco, Algeria, Tunisia, Libya, Egypt, Jordan, Palestine, Lebanon, Syria, Turkey, Iraq, Iran, Kuwait, Saudi Arabia, Yemen, Oman, United Arab Emirates, Bahrain, and Qatar.
 
 5. **Sub-Saharan Africa**: non-aforementioned African countries.
 
@@ -676,9 +688,9 @@ A variety of conclusions can be drawn from the previous graphs. Here we present 
 
 1. The different areas are **not homogeneous** in electricity generation from low-carbon sources: Latin American countries have a more significant share; developed, Eastern European and Sub-Saharan and Asian follow; Middle-East generation is negligible.
 
-2. **Hydropower** is an essential source of electricity in all the considered macroregion.
+2. **Hydropower** is an essential source of electricity in all the considered macroregions.
 
-3. **Nuclear electricity** is significant only in developed countries and Eastern Europe; in those macroregions, its importance is comparable to hydropower generation.
+3. **Nuclear electricity** is significant only in developed countries and Eastern Europe; its importance is comparable to hydropower generation in those macroregions.
 
 4. Developed countries drive **non-hydropower renewable** production. Nonetheless, it is also true that those sources are also rapidly becoming more relevant in Latin America and Asia.
 
@@ -757,13 +769,13 @@ ggplot(place, aes(year, non_hydro_elec, color = ISO_code)) +
 
 ```
 
-### 5.4 Green Score with focus on the sources
+### 4.4 Green Score with focus on the sources
 
-In this section we aim to study which countries are nearer to the full LC target (i.e., to produce from LC sources all the electricity they consume). To do so, we create a **Green Score**, defined as the following ratio:
+In this section, we aim to study which countries are nearer to the full LC target (i.e., to produce from LC sources all the electricity they consume). To do so, we create a **Green Score**, defined as the following ratio:
 \[
 \text{GS} = \frac{\text{electricity generated from LC sources}}{{\text{electricity demand}}}
 \]
-Note that in paragraphs 5.4 and 5.5 analyses we removed the countries with a smaller population than 500,000. The reason is that we expect those countries to be too small to have a significant independent electricity policy with respect to their neighbors.
+Note that in paragraphs 4.4 and 4.5 analyses, we removed the countries with a smaller population than 500,000. The reason is that we expect those countries to be too small to have a significant independent electricity policy with respect to their neighbors.
 ```{r descriptive_9, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 # Note. x is computed as the squared root of the electricity demand per capita, scaled in
 # the interval [0,1]. We plot the electricity demand per capita to distinguish if the
@@ -877,9 +889,9 @@ ggplot(filter(place, iso_code != "LAO", iso_code != "BTN", iso_code != "PRY"),
 ```
 The plot confirms the correlation between the Green Score and the electricity generation from hydropower. It also shows an important link with nuclear power production but not with solar, wind, and other sources.
 
-### 5.5 Green Score with focus on the macroregions
+### 4.5 Green Score with focus on the macroregions
 
-In this final section of descriptive analyses we focus on the analysis of the Green Score in each country.
+In this final section of descriptive analyses, we focus on the analysis of the Green Score in each country.
 
 ```{r descriptive_12, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 # Boxplot of the Green Score
@@ -950,11 +962,11 @@ ggplot(filter(place, tag == "developed"),
 
 
 ```
-The developed countries with the highest Green Scores are **Sweden**, Norway, Switzerland, and France, while the ones with the lowest values are Macao, Hong Kong, Israel and Malta.
+The developed countries with the highest Green Scores are **Sweden**, Norway, Switzerland, and France. In contrast, the ones with the lowest values are Macao, Hong Kong, Israel, and Malta.
 
 The LC sources are heterogeneous: while countries like Norway, Switzerland, and Canada are mainly driven by hydropower, others like France and Belgium mainly generate electricity from nuclear power, and others still, like Denmark and Ireland, are mainly driven by non-hydro renewables.
 
-It is also interesting to highlight that the developed Asian countries have a lower score compared to the others: the second best performing country, Japan, outperforms only Australia, Luxembourg, Cyprus and Malta.
+It is also interesting to highlight that the developed Asian countries tend to have a lower score than the others: Japan is the second-best-performing Asian country, but it outperforms only Australia, Luxembourg, Cyprus, and Malta.
 
 ```{r descriptive_14, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 # Creation of the plot for Eastern Europe
@@ -970,7 +982,7 @@ ggplot(filter(place, tag == "east_europe"),
        y = "Green Score") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-No country in Eastern Europe is near a Green Score equal to 1: the best-performing one is **Slovenia**, with a score of 0.72. Follow Slovakia, Albania and Armenia. In the region there are also three countries with a score near zero: Belarus, Azerbaijan and Moldova. As the barplot shows, Eastern European countries mainly produce LC electricity through hydro and nuclear sources.
+No country in Eastern Europe is near a Green Score equal to 1: the best-performing one is **Slovenia**, with a score of 0.72. Follow Slovakia, Albania, and Armenia. There are also three countries with a score near zero in the region: Belarus, Azerbaijan, and Moldova. As the barplot shows, Eastern European countries mainly produce LC electricity through hydro and nuclear sources.
 
 ```{r descriptive_15, fig.width=8, fig.height = 12, include=TRUE, warning = FALSE}
 # Creation of the plot for Latin America & Caribbean
@@ -1020,7 +1032,7 @@ Here are the other main observations:
 
 1. some Latin American and Caribbean countries also have significant production from other sources, notably **Uruguay**, which mainly produces electricity through wind power;
 
-2. **Kenya** is the only Sub-Saharan country with a good Green Score that generates significantly from non-hydropower sources, specifically geothermal [16]
+2. **Kenya** is the only Sub-Saharan country with a good Green Score that generates significantly from non-hydropower sources. The reason is that the country exploits the incredibly cost-effective geothermic capacity of the Rift Valley. [16]
 
 ```{r descriptive_16, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 # Creation of the plot for the North African & Middle-East countries
@@ -1037,7 +1049,7 @@ ggplot(filter(place, tag == "middle_east"),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-We conclude the descriptive analyses by looking at the performance of Northern Africa and Middle East countries. Consistently with the findings at paragraph 5.3, the barplot shows that all the countries fail to reach a good performance: the best performing one, **Turkey**, has a Green Score smaller than 0.5. As the following table shows, this is mainly due to an large availability of oil and gas.
+We conclude the descriptive analyses by examining the performance of Northern African and Middle East countries. Consistently with the findings in paragraph 4.3, the barplot shows that all the countries fail to reach a good performance: the best performing one, **Turkey**, has a Green Score smaller than 0.5. As the following table shows, this is mainly due to their large availability of oil and gas.
 
 ```{r descriptive_17, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 # Creation of a dataset containing per capita average fossil reserves in Middle-East
@@ -1062,12 +1074,12 @@ kable(place, caption = "Per capita reserves of fossil electricity sources")
 ```
 \newpage
 
-# Chapter 6
+# Chapter 5
 # Modeling
 
 
 
-# Bibliografia e link
+# Sitography
 [1] https://github.com/owid/energy-data
 
 [2] https://data.worldbank.org/indicator/NY.GDP.MKTP.KD
@@ -1098,4 +1110,4 @@ kable(place, caption = "Per capita reserves of fossil electricity sources")
 
 [15] https://www.andritz.com/hydro-en/hydronews/hydropower-africa/democratic-rep-congo
 
-[16] https://lowcarbonpower.org/region/Kenya
+[16] https://www.imf.org/en/Publications/fandd/issues/2022/12/country-case-kenya-taps-the-earth-heat
