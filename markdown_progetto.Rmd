@@ -218,7 +218,7 @@ In this section, we present the pre-processing activities performed.
 2. **Feature selection**, computed over the *Energy dataset*. From the original 129 variables, we kept only 36 relevant for the analyses.
 3. **Feature renaming**, computed over *main*, as the features merged to the *Energy dataset* have inconvenient names.
 4. **Feature addition**, computed over *main* in paragraph 4.3. The new categorical variable groups the world countries into six macroregions.
-4. **Cleaning NA and 0 values**, with the substitution of NA for reserves data to 0 and of '..' to NA for GDP
+4. **Cleaning NA values**, computed over *main*. It consists of the substitution of NA values for reserves data to 0 and of '..' to NA for GDP.
 
 
 ```{r data_preproc, include=TRUE, warning = FALSE}
@@ -1496,17 +1496,13 @@ do_models <- function(depen = dependent){
   results_nind = rs_models(mlm=model_data, dep=dependent,
                            ind=independent, Bt=max_row_nind$Btag)
   
-  print(paste("Model for the variable:", dependent))
-  print("Best performing models:")
-  print(max_row)
-  print("Coefficients for best stepwise lm:")
-  print(results$coeff_sm)
-  print("Best performing models with only external data:")
-  print(max_row_nind)
-  print("Coefficients for best stepwise lm with only external data:")
-  print(results_nind$coeff_sm)
-  print("Performance on all models:")
-  print(results_df)
+  print(paste("Models for the variable:", dependent))
+  print("")
+  print(kable(as.data.frame(max_row), caption = "Best performing models"))
+  print(kable(as.data.frame(results$coeff_sm), caption = "Coefficients for best stepwise lm"))
+  print(kable(as.data.frame(max_row_nind), caption = "Best performing models with only external data"))
+  print(kable(as.data.frame(results_nind$coeff_sm), caption = "Coefficients for best stepwise lm with only external data"))
+  print(kable(results_df, caption = "Performance on all models"))
    
 }
 ```
