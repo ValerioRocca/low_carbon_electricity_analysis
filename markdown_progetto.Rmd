@@ -70,10 +70,10 @@ Academic Year 2022/2023
 2. \textbf{Data pre-processing} & \textbf{X} \\
 
 3. \textbf{Exploratory analyses} & \textbf{X} \\
-\hspace{1em} 4.1 Global exploratory analyses & X \\
-\hspace{1em} 4.2 Variables transformation & X \\
-\hspace{1em} 4.3 Plotting function and division in groups & X \\
-\hspace{1em} 4.4 Analysis on groups of variables & X \\
+\hspace{1em} 3.1 Global exploratory analyses & X \\
+\hspace{1em} 3.2 Variables transformation & X \\
+\hspace{1em} 3.3 Plotting function and division in groups & X \\
+\hspace{1em} 3.4 Analysis on groups of variables & X \\
 
 4. \textbf{Descriptive analyses} & \textbf{X} \\
 \hspace{1em} 4.1 Global analyses & X \\
@@ -83,9 +83,9 @@ Academic Year 2022/2023
 \hspace{1em} 4.5 Green Score with focus on the macroregions & X \\
 
 5. \textbf{Modeling} & \textbf{X} \\
-\hspace{1em} 4.1 Initial data preparation for Modeling & X \\
-\hspace{1em} 4.2 Functions definition & X \\
-\hspace{1em} 4.3 Obtaining Models & X \\
+\hspace{1em} 5.1 Initial data preparation for Modeling & X \\
+\hspace{1em} 5.2 Functions definition & X \\
+\hspace{1em} 5.3 Obtaining Models & X \\
 
 \textbf{Sitography} & \textbf{X} \\
 
@@ -343,7 +343,6 @@ grid.arrange(p11, p12, widths = c(0.6, 0.4), ncol = 2)
 Therefore we decided to transform data for exploratory analysis, first by dividing to all variables, except HDI, not representing a share (e.g. hydro share of electricity, urbanization rate) by the population (as millions of inhabitants), then by applying a logarithm transformation to population, land area, GDP and the four reserves variables.
 Also, we create a subset of our dataset containing data from a single year, 2016.
 ```{r explorative_4, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
-# analisi con logaritmi e procapite(million)
 cols_pc <- c(6,7,9,10,11,12,14,15,17,18,20,22,23,25,26,28,29,30,31,33,35,37,42,43,44,45,46)
 cols_log <- c(4, 37, 42, 43, 44, 45, 46)
 
@@ -396,7 +395,8 @@ highcarb = c(6,7,8,14,15,16,25,26,27,12,13)
 
 Now we'll plot using the function we created for each group, and we'll also plot the correlation between variables inside each group.
 
-### 3.4 Analysis on Energy dataset non source specific
+### 3.4 Analysis on groups of variables
+#### 3.4.1 Analysis on Energy dataset non source specific
 First we observe the variables in the Energy dataset not specific to any source:
 ```{r explorative_8, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in other_measures){
@@ -413,7 +413,7 @@ Also **Primary energy consumption** is correlated to greenhouse gas emissions, b
 
 The countries with highest **electricity demands and generation** (two measurements that are almost collinear, as expected), are, apparently, rich countries that are either very cold or very hot.
 
-### 3.5 Analysis on Energy dataset for fossil sources
+#### 3.4.2 Analysis on Energy dataset for fossil sources
 ```{r explorative_9, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in highcarb){
   do_plots(i)
@@ -426,7 +426,7 @@ Moving on to fossil sources we can notice that **oil** overall is the most used 
 
 Comparing the graphs with all years vs 2016 we can notice a very slight decrease overtime of use for all fossil sources.
 
-### 3.6 Analysis on Energy dataset for low carbon sources
+#### 3.4.3 Analysis on Energy dataset for low carbon sources
 ```{r explorative_10, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in lowcarb){
   do_plots(i)
@@ -442,7 +442,7 @@ Electricity from low carbon sources is manly coming from **hydro**, with all oth
 
 **Solar** and **Wind** are correlated, however the correlation has gotten weaker over time, this is probably due to the cost of the sources, which came down over the years, so it is feasible for more countries to invest in renewable sources and to do so in the one that best fits the country availability.
 
-### 3.7 Analysis on external reserves variables
+#### 3.4.4 Analysis on external reserves variables
 ```{r explorative_11, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in reserves){
   do_plots(i)
@@ -452,7 +452,7 @@ corrplot(cor(mainlog2016[,reserves], use="pairwise.complete.obs"), method="color
 
 The plots for reserves don't offer many insight other than the fact that most countries don't have reserves, the distribution between countries that have reserves is normal (after transformation); there also is correlation among the different types of reserves.
 
-### 3.8 Analysis on other external variables
+#### 3.4.5 Analysis on other external variables
 ```{r explorative_12, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in ext_measures){
   do_plots(i)
@@ -466,7 +466,7 @@ Other variables external from the Energy dataset all have a distribution similar
 
 As expected **GDP** and **HDI** are strongly correlated, and urbanization rate also has a good correlation with those two variables, while all three are slightly negatively correlated to **land area** and **agricultural land rate**; **particulate pollution** is not correlated to any other variables.
 
-### 3.9 Inter-groups correlations
+#### 3.4.6 Inter-groups correlations
 ```{r explorative_13, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 subsetdf = mainlog[,c(2,other_measures,highcarb,lowcarb,reserves,ext_measures)] 
 subsetdf2016 = mainlog2016[,c(other_measures,highcarb,lowcarb,reserves,ext_measures)]
