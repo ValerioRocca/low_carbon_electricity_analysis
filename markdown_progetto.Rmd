@@ -70,6 +70,10 @@ Academic Year 2022/2023
 2. \textbf{Data pre-processing} & \textbf{X} \\
 
 3. \textbf{Exploratory analyses} & \textbf{X} \\
+\hspace{1em} 4.1 Global exploratory analyses & X \\
+\hspace{1em} 4.2 Variables transformation & X \\
+\hspace{1em} 4.3 Plotting function and division in groups & X \\
+\hspace{1em} 4.4 Analysis on groups of variables & X \\
 
 4. \textbf{Descriptive analyses} & \textbf{X} \\
 \hspace{1em} 4.1 Global analyses & X \\
@@ -79,6 +83,9 @@ Academic Year 2022/2023
 \hspace{1em} 4.5 Green Score with focus on the macroregions & X \\
 
 5. \textbf{Modeling} & \textbf{X} \\
+\hspace{1em} 4.1 Initial data preparation for Modeling & X \\
+\hspace{1em} 4.2 Functions definition & X \\
+\hspace{1em} 4.3 Obtaining Models & X \\
 
 \textbf{Sitography} & \textbf{X} \\
 
@@ -94,7 +101,7 @@ The analysis begins by examining quantitatively the historical context of low-ca
 
 Next, the report delves into the current trends and status of low-carbon electricity generation. By exploiting a tailored yet simple measure, the Green Score, it provides a detailed overview of various sources such as nuclear, solar, wind, and hydropower, along with their contributions to the global energy mix.
 
-Parte di Giacomo
+Finally, various models with different transformations on the data are proposed, in order to find the best performing ones, and the coefficients of the models are analyzed to learn the impact of the different independent variables on variables that measure pollution and the adoption of different renewable energy sources in the countries over the last two decades.
 
 \newpage
 
@@ -1510,67 +1517,119 @@ do_models <- function(depen = dependent){
 ### 5.3 Obtaining Models
 The last step involves only calling the **do_models** function, passing it as argument the dependent variable for the model.
 
-The dependent variables that will be passed are 10, all are variables included in the initial **Energy dataset**, the first two are **carbon intensity of electricity** and **greenhouse gas emissions**, the other 8 are the share of electricity of fossil electricity and all the single low carbon electricity sources (and grouping as renewables and low carbon).
+The dependent variables that will be passed are 10, all are variables included in the initial **Energy dataset**, the first two are **carbon intensity of electricity** and **greenhouse gas emissions**, the other 8 are the share of electricity of fossil electricity and all the single low carbon electricity sources (and grouping as renewables and low carbon), for these last 8 we will mainly focus to analyze the model with only external independent variables, since when analyzing the share of electricity of a given source the electricity production of such source has a high correlation, giving us a high R squared, but only banal results.
+
+It is important to notice that when applying the logit function the numerical variables in the dataset are all distributed between roughly -12 and +12, so their coefficients are comparable among them, but are not directly comparable to the coefficients for the tag variables; instead, when the logit function is not applied they can be directly compared.
+
+GDP and HDI, which are very correlated, often appear with similar but opposite coefficients, which indicates rich countries where investment on human development and freedom is not as high when GDP has a positive coefficient and HDI a negative one, and the opposite when GDP is negative and HDI positive.
 
 #### 5.3.1 Carbon intensity of electricity
 ```{r model_8, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="carbon_intensity_elec")
 ```
 
+Performance for carbon intensity of electricity is quite low even with the energy source variables in the model, at ~0.53.
+
+GDP and HDI have opposite weights, indicating that high carbon intensity is related to rich countries with lower HDI, but HDI coefficient is only ~.75 of the GDP one, indicating that richer countries inhabitants still pollute more than poorer countries.
+
+The tag for eastern europe is positive and the others are negative, with the developed countries tag having a high coefficient (which also balances out with the score for GDP), relating to the fact that people in many developed countries pollute less, thanks to the high share of renewables in their electricity mix.
+
+Coefficients related to the source of electricity, as expected, are positive for fossil sources and negative for hydro and nuclear, solar and wind are instead not kept in the stepwise model.
+
+
+Regarding the model excluding source data, the performance is ~0.26, doesn't use logit on the data.
+
+Now population and land area have high negative coefficients, indicating that population in smaller, but especially less populated countries, pollute way more.
+
+The coefficients on the tags are different, with eastern countries having a negative coefficient, while middle-east has a positive coefficient; this also relates to the influence of population and land area above, since countries in eastern europe tend to be big and populated, while in middle east we probably have outliers of small countries that pollute a lot due to oil production.
 
 #### 5.3.2 Greenhouse gas emissions
 ```{r model_9, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="greenhouse_gas_emissions")
 ```
 
+Greenhouse gas emission models have a very high R squared, with the best model ~1.
 
-#### 5.3.3 Fossil share of electricity
-```{r model_10, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
-do_models(depen="fossil_share_elec")
-```
+Electricity from gas, coal and oil explain most of the independent, but curiously also hydro, other renewables and nuclear have a positive correlation.
 
+The model without sources still has a very high R squared ~0.77.
 
-#### 5.3.4 Hydro share of electricity
+In this case there is a big influence of GDP with positive coefficients, and HDI also has a positive coefficient, indicating greenhouse gas emission are very correlated to rich countries, 
+
+The tags are positive for middle east and eastern europe, and negative for the others, especially sub-african and developed.
+
+#### 5.3.3 Hydro share of electricity
 ```{r model_11, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="hydro_share_elec")
 ```
 
+Hydro electricity is obviously a good indicator when sources are in the model, but GDP and land area are also very influent, which might make us think that this clean energy source is also easily accessible to poorer and smaller countries, however these are just an indication of total electricity production (as, especially regarding GDP, richer countries use more electricity pro capita).
 
-#### 5.3.5 Solar share of electricity
+In fact in the model excluding sources land area and population have negative coefficients, with HDI having a positive coefficient and GDP a negative one, indicating that for a high share of hydro electricity the country needs to be able to make sizeable investments.
+
+In the model excluding source we also have this time year included, with a small yet negative coefficient, indicating that the share of hydro in the electricity mix is getting lower each year, if the other parameters are fixed.
+
+#### 5.3.4 Solar share of electricity
 ```{r model_12, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="solar_share_elec")
 ```
 
+For solar the model with sources is banal, with most of the share explained by solar electricity.
 
-#### 5.3.6 Wind share of electricity
+It is instead interesting to analyze the model excluding source, in which HDI, GDP and population have positive scores, indicating solar is accessible mainly to richer and highly populated countries.
+
+Here year appear with a noticeable weight, indicating that regarding solar energy is in quick development over the last two decades.
+
+#### 5.3.5 Wind share of electricity
 ```{r model_13, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="wind_share_elec")
 ```
 
+Similarly for wind the share is mainly explained by the electricity production from wind, so it is not worth spending time on the best model.
 
-#### 5.3.7 Other renewables share of electricity
+The model excluding sources has a R sq. ~0.49 and behaves very similarly to solar share, the major difference is in the tags sub-african, which for obvious geographical reasons has a positive coefficient, and here it has a negative one.
+
+#### 5.3.6 Other renewables share of electricity
 ```{r model_14, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="other_renewables_share_elec")
 ```
 
+Other renewables is also very similar to solar, but in the model without sources (which has the lowest score of ~0.26, indicating it is hard to explain it with our variables) we now see a high coefficient for latin america instead, indicating that this measure is also highly related to local availability and geography.
 
-#### 5.3.8 Renewables share of electricity
-```{r model_15, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
-do_models(depen="renewables_share_elec")
-```
-
-
-#### 5.3.9 Nuclear share of electricity
+#### 5.3.7 Nuclear share of electricity
 ```{r model_16, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="nuclear_share_elec")
 ```
 
+For nuclear similarly we will only focus on model excluding sources, which has a score for ~0.46 for the best model.
 
-#### 5.3.10 Low carbon share of electricity
+The tags show a high preference for nuclear in the eastern europe mainly and also in developed countries.
+
+Population and HDI are the main positive indicators, indicating that also nuclear is manly accessible to richer and more populated countries, with a negative coefficient for land area, showing its energy production efficiency in terms of electricity produced compared to the area needed to operate the nuclear plants.
+
+Year is present also in this model, this time with a negative coefficient, indicating that countries are progressively abandoning neclear, or at least they stopped investing in it.
+
+Uranium reserves have a positive coefficient, which indicates that it can be a reason to invest in nuclear, however it is not very high, indicating it is not a main concern, probably because of the low amount of material needed to produce electricity from nuclear, which makes transporting the material a small cost without the need of building infrastructure for it.
+
+
+#### 5.3.8 Renewables, Low carbon and Fossil share of electricity
+```{r model_15, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="renewables_share_elec")
+```
 ```{r model_17, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="low_carbon_share_elec")
 ```
+```{r model_10, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="fossil_share_elec")
+```
 
+Renewables, low carbon and fossil are group, as the last two indicate opposite measurements, and we have seen that low carbon and renewables are very similar, due to the small impact of nuclear in the mix.
+
+The best model has R square of ~0.79, which is low in respect to our expectations, considering it has the variables for electricity from each source; it returns banal coefficients, with a high impact of hydro (making up most of the renewable electricity) and also fossil fuel sources on the opposite end. GDP also has a high coefficient and HDI is not in the model.
+
+The model without sources only has an R squared of ~0.34, but is much more interesting, being highly impacted by population and land area, confirming that smaller countries are the ones that rely mostly on fossil fuels, probably because of smaller infrastructure investments and research costs.
+
+Reserves also have quite high coefficients, as countries with fossil fuels reserves have less incentives to invest in clean electricity sources.
 
 \newpage
 # Sitography
