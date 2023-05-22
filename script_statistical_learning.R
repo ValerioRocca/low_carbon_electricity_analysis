@@ -7,105 +7,106 @@ library(car) # for box-cox
 #library(maps) # for world map
 library(rworldmap) #for world map
 library(glmnet)
-
+library(gridExtra)
+library(corrplot)
 
 #### Preparation and Cleaning ####
 
 # 1) Remove variables from main dataframe
 main = select(total_energy_data,
               -c("gdp",
-            "biofuel_cons_change_pct",
-            "biofuel_cons_change_twh",
-            "biofuel_cons_per_capita",
-            "biofuel_elec_per_capita",
-            "coal_cons_change_pct",
-            "coal_cons_change_twh",
-            "coal_cons_per_capita",
-            "coal_elec_per_capita",
-            "coal_prod_change_pct",
-            "coal_prod_change_twh",
-            "coal_prod_per_capita",
-            "coal_consumption",
-            "coal_share_energy",
-            "energy_cons_change_pct",
-            "energy_per_capita",
-            "energy_per_gdp",
-            "electricity_share_energy",
-            "fossil_cons_change_pct",
-            "fossil_cons_change_twh",
-            "fossil_elec_per_capita",
-            "fossil_fuel_consumption",
-            "fossil_share_energy",
-            "gas_cons_change_pct",
-            "gas_cons_change_twh",
-            "gas_elec_per_capita",
-            "gas_prod_change_pct",
-            "gas_prod_change_twh",
-            "gas_prod_per_capita",
-            "gas_consumption",
-            "gas_share_energy",
-            "hydro_cons_change_pct",
-            "hydro_cons_change_twh",
-            "hydro_elec_per_capita",
-            "fossil_energy_per_capita",
-            "hydro_energy_per_capita",
-            "hydro_consumption",
-            "hydro_share_energy",
-            "low_carbon_cons_change_pct",
-            "low_carbon_cons_change_twh",
-            "low_carbon_elec_per_capita",
-            "low_carbon_energy_per_capita",
-            "low_carbon_consumption",
-            "low_carbon_share_energy",
-            "net_elec_imports_share_demand",
-            "nuclear_cons_change_pct",
-            "nuclear_cons_change_twh",
-            "nuclear_elec_per_capita",
-            "nuclear_energy_per_capita",
-            "nuclear_consumption",
-            "nuclear_share_energy",
-            "oil_prod_per_capita",
-            "gas_energy_per_capita",
-            "oil_elec_per_capita",
-            "oil_prod_change_pct",
-            "oil_prod_change_twh",
-            "oil_consumption",
-            "oil_share_energy",
-            "other_renewable_exc_biofuel_electricity",
-            "other_renewables_cons_change_pct",
-            "other_renewables_cons_change_twh",
-            "other_renewables_elec_per_capita",
-            "other_renewables_elec_per_capita_exc_biofuel",
-            "other_renewables_energy_per_capita",
-            "other_renewables_share_elec_exc_biofuel",
-            "other_renewable_consumption",
-            "other_renewables_share_energy",
-            "per_capita_electricity",
-            "renewables_cons_change_pct",
-            "renewables_cons_change_twh",
-            "renewables_elec_per_capita",
-            "renewables_energy_per_capita",
-            "renewables_consumption",
-            "renewables_share_energy",
-            "solar_cons_change_pct",
-            "solar_cons_change_twh",
-            "solar_elec_per_capita",
-            "solar_consumption",
-            "solar_share_energy",
-            "wind_cons_change_pct",
-            "wind_cons_change_twh",
-            "wind_consumption",
-            "wind_share_energy",
-            "solar_energy_per_capita",
-            "wind_elec_per_capita",
-            "wind_energy_per_capita",
-            "oil_cons_change_pct",
-            "oil_cons_change_twh",
-            "oil_energy_per_capita",
-            "biofuel_consumption",
-            "biofuel_electricity",
-            "biofuel_share_elec",
-            "biofuel_share_energy"))
+                 "biofuel_cons_change_pct",
+                 "biofuel_cons_change_twh",
+                 "biofuel_cons_per_capita",
+                 "biofuel_elec_per_capita",
+                 "coal_cons_change_pct",
+                 "coal_cons_change_twh",
+                 "coal_cons_per_capita",
+                 "coal_elec_per_capita",
+                 "coal_prod_change_pct",
+                 "coal_prod_change_twh",
+                 "coal_prod_per_capita",
+                 "coal_consumption",
+                 "coal_share_energy",
+                 "energy_cons_change_pct",
+                 "energy_per_capita",
+                 "energy_per_gdp",
+                 "electricity_share_energy",
+                 "fossil_cons_change_pct",
+                 "fossil_cons_change_twh",
+                 "fossil_elec_per_capita",
+                 "fossil_fuel_consumption",
+                 "fossil_share_energy",
+                 "gas_cons_change_pct",
+                 "gas_cons_change_twh",
+                 "gas_elec_per_capita",
+                 "gas_prod_change_pct",
+                 "gas_prod_change_twh",
+                 "gas_prod_per_capita",
+                 "gas_consumption",
+                 "gas_share_energy",
+                 "hydro_cons_change_pct",
+                 "hydro_cons_change_twh",
+                 "hydro_elec_per_capita",
+                 "fossil_energy_per_capita",
+                 "hydro_energy_per_capita",
+                 "hydro_consumption",
+                 "hydro_share_energy",
+                 "low_carbon_cons_change_pct",
+                 "low_carbon_cons_change_twh",
+                 "low_carbon_elec_per_capita",
+                 "low_carbon_energy_per_capita",
+                 "low_carbon_consumption",
+                 "low_carbon_share_energy",
+                 "net_elec_imports_share_demand",
+                 "nuclear_cons_change_pct",
+                 "nuclear_cons_change_twh",
+                 "nuclear_elec_per_capita",
+                 "nuclear_energy_per_capita",
+                 "nuclear_consumption",
+                 "nuclear_share_energy",
+                 "oil_prod_per_capita",
+                 "gas_energy_per_capita",
+                 "oil_elec_per_capita",
+                 "oil_prod_change_pct",
+                 "oil_prod_change_twh",
+                 "oil_consumption",
+                 "oil_share_energy",
+                 "other_renewable_exc_biofuel_electricity",
+                 "other_renewables_cons_change_pct",
+                 "other_renewables_cons_change_twh",
+                 "other_renewables_elec_per_capita",
+                 "other_renewables_elec_per_capita_exc_biofuel",
+                 "other_renewables_energy_per_capita",
+                 "other_renewables_share_elec_exc_biofuel",
+                 "other_renewable_consumption",
+                 "other_renewables_share_energy",
+                 "per_capita_electricity",
+                 "renewables_cons_change_pct",
+                 "renewables_cons_change_twh",
+                 "renewables_elec_per_capita",
+                 "renewables_energy_per_capita",
+                 "renewables_consumption",
+                 "renewables_share_energy",
+                 "solar_cons_change_pct",
+                 "solar_cons_change_twh",
+                 "solar_elec_per_capita",
+                 "solar_consumption",
+                 "solar_share_energy",
+                 "wind_cons_change_pct",
+                 "wind_cons_change_twh",
+                 "wind_consumption",
+                 "wind_share_energy",
+                 "solar_energy_per_capita",
+                 "wind_elec_per_capita",
+                 "wind_energy_per_capita",
+                 "oil_cons_change_pct",
+                 "oil_cons_change_twh",
+                 "oil_energy_per_capita",
+                 "biofuel_consumption",
+                 "biofuel_electricity",
+                 "biofuel_share_elec",
+                 "biofuel_share_energy"))
 
 # Remove units without an ISO code
 main = main[main$iso_code!='',]
@@ -192,14 +193,97 @@ rm(total_energy_data)
 
 # Change variables names
 colnames(main) = c(colnames(main[,1:36]), "land_area", "hdi", "urbaniz_rate",
-                           "particulate_pollution", "agri_land_rate",
-                           "coal_reserves_2021", "oil_reserves_2012",
-                           "uranium_reserves_2019","gas_reserves", "gdp")
+                   "particulate_pollution", "agri_land_rate",
+                   "coal_reserves_2021", "oil_reserves_2012",
+                   "uranium_reserves_2019","gas_reserves", "gdp")
 
 # Change ".." to NA
 main = mutate(main, gdp = na_if(gdp, ".."))
 main$gdp = as.numeric(main$gdp)
 
+
+#### ANALISI ESPLORATIVA ####
+main = main %>% mutate(
+  oil_reserves_2012 = coalesce(oil_reserves_2012, 0),
+  uranium_reserves_2019 = coalesce(uranium_reserves_2019, 0),
+  gas_reserves = coalesce(gas_reserves, 0),
+  coal_reserves_2021 = coalesce(coal_reserves_2021, 0))
+
+summary(main)
+
+ggplot(main, aes(x = year)) + geom_histogram(bins = 123) + ggtitle(paste("year distribution"))
+
+i=4
+i1 <- colnames(main)[i]
+p11 <- ggplot(main, aes_string(x = i1)) + geom_histogram(bins = 100) + ggtitle(paste(i1, " distribution"))
+nacount = main %>%
+  group_by(year) %>%
+  summarize(na_perc = sum(is.na(!!sym(i1)))/n())
+p12 <- ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) + ggtitle("NA% by Year")
+grid.arrange(p11, p12, widths = c(0.6, 0.4), ncol = 2)
+
+
+# analisi con logaritmi e procapite(million)
+cols_pc <- c(6,7,9,10,11,12,14,15,17,18,20,22,23,25,26,28,29,30,31,33,35,37,42,43,44,45,46)
+cols_log <- c(4, 37, 42, 43, 44, 45, 46)
+
+mainlog <- main %>% mutate(across(all_of(cols_pc), .fns = ~.*1000000/population))
+mainlog <- mainlog %>% mutate(across(all_of(c(cols_log)), .fns = ~ log(.+1)))
+
+#single year visualization, 2016
+mainlog2016 = mainlog[mainlog$year==2016,]
+
+do_plots = function(i){
+  i1 = colnames(mainlog)[i]
+  x_min <- min(mainlog[i1], na.rm=TRUE)
+  x_max <- max(mainlog[i1], na.rm=TRUE)
+  p11 = ggplot(mainlog, aes_string(x = i1)) + geom_histogram(bins = 50) + ggtitle(paste(i1, " distribution")) + xlim(x_min-1, x_max+1)
+  p12 = ggplot(mainlog2016, aes_string(x = i1)) + geom_histogram(bins = 25) + ggtitle("2016 distribution") + xlim(x_min-1, x_max+1)
+  nacount = mainlog %>%
+    group_by(year) %>%
+    summarize(na_perc = sum(is.na(!!sym(i1)))/n())
+  p13 = ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) + ggtitle("NA% by Year")
+  grid.arrange(p11, p12, p13, widths = c(3,3,2), ncol = 3)
+  i1_ord = mainlog2016[order(mainlog2016[i1], decreasing=TRUE),1]
+  print(paste("Top three countries in 2016 for",i1,":", i1_ord[1], ",", i1_ord[2], ",", i1_ord[3]))
+}
+
+other_measures = c(5,17,9,10,11,22,30)
+reserves = c(42,43,44,45)
+ext_measures = c(37,38,39,40,41,46)
+lowcarb = c(18,19,33,34,35,36,28,29,31,32,23,24,20,21)
+highcarb = c(6,7,8,14,15,16,25,26,27,12,13)
+
+for (i in other_measures){
+  do_plots(i)
+}
+corrplot(cor(mainlog[,other_measures], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+corrplot(cor(mainlog2016[,other_measures], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+for (i in highcarb){
+  do_plots(i)
+}
+corrplot(cor(mainlog[,highcarb], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+corrplot(cor(mainlog2016[,highcarb], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+for (i in lowcarb){
+  do_plots(i)
+}
+corrplot(cor(mainlog[,lowcarb], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+corrplot(cor(mainlog2016[,lowcarb], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+for (i in reserves){
+  do_plots(i)
+}
+corrplot(cor(mainlog2016[,reserves], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+for (i in ext_measures){
+  do_plots(i)
+}
+corrplot(cor(mainlog[,ext_measures], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+corrplot(cor(mainlog2016[,ext_measures], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+
+subsetdf = mainlog[,c(2,other_measures,highcarb,lowcarb,reserves,ext_measures)] 
+subsetdf2016 = mainlog2016[,c(other_measures,highcarb,lowcarb,reserves,ext_measures)]
+
+corrplot(cor(subsetdf, use="pairwise.complete.obs"), method="color", tl.cex = .3)
+corrplot(cor(subsetdf2016, use="pairwise.complete.obs"), method="color", tl.cex = .3)
 
 #### ANALISI DESCRITTIVA DEL DATASET ####
 
@@ -942,257 +1026,183 @@ ggplot(filter(place, tag == "middle_east"),
 
 
 #### Cleaning, Selecting and Preparing Data for Modelling ####
+#adding tags here as well
+mainlog = cbind(mainlog, tag)
+mainlog = cbind(mainlog, model.matrix(~-1+tag, data=mainlog)) %>% subset(select = -c(tag0))
 #keep only years between 2000 and 2019
-prova = main[main$year== 2000| main$year==2016,] %>%
-  mutate(oil_reserves_2012 = coalesce(oil_reserves_2012, 0),
-         uranium_reserves_2019 = coalesce(uranium_reserves_2019, 0),
-         gas_reserves = coalesce(gas_reserves, 0),
-         coal_reserves_2021 = coalesce(coal_reserves_2021, 0))
-#remove Countries that have all important fields NA or 0
-prova = prova[(prova$country != "Antarctica") &
-                (prova$country != "Netherlands Antilles") &
-                (prova$country != "Gibraltar") &
-                (prova$country != "Western Sahara") &
-                (prova$country != "Niue") &
-                (prova$country != "Saint Helena") &
-                (prova$country != "Bermuda") &
-                (prova$country != "French Guiana") &
-                (prova$country != "Guadeloupe") &
-                (prova$country != "Micronesia (country)") &
-                (prova$country != "Northern Mariana Islands") &
-                (prova$country != "Reunion") &
-                (prova$country != "Tuvalu") &
-                (prova$country != "Martinique") &
-                (prova$country != "British Virgin Islands") &
-                (prova$country != "Cook Islands") &
-                (prova$country != "Faeroe Islands") &
-                (prova$country != "Falkland Islands") &
-                (prova$country != "Montserrat") &
-                (prova$country != "New Caledonia") &
-                (prova$country != "Saint Pierre and Miquelon") &
-                (prova$country != "Aruba") &
-                (prova$country != "Cayman Islands") &
-                (prova$country != "French Polynesia") &
-                (prova$country != "Turks and Caicos Islands") &
-                (prova$country != "American Samoa") &
-                (prova$country != "Greenland") &
-                (prova$country != "Guam") &
-                (prova$country != "Nauru") &
-                (prova$country != "United States Virgin Islands")
-              ,]
-# Palestine missing data in 2000,
-# productions missing 2017 to 2020,
-# some energy_cons_change_twh missing can throw to 0,
-# some primary_energy_consumption missing, can copy from other year maybe?,
-# agri_land_rate missing for 2019 can copy 2018,
-# missing data for taiwan, north korea, macao
+mainlogm = mainlog[mainlog$year %in% 2000:2019,]
 
-#pro capite (million) transformation
-cols_procapite <- c(6,7,9,10,11,12,14,15,17,18,20,22,23,25,26,28,29,31,33,35,37,40,42,43,44,45,46)
-prova <- prova %>% mutate(across(all_of(cols_procapite), .fns = ~.*1000000/population))
-cols_log <- c(4, 37, 40, 42, 43, 44, 45, 46)
-prova <- prova %>% mutate(across(all_of(cols_log), .fns = ~ log(.+1)))
-#find na values for data cleaning
-#colSums(is.na(prova))/3760*100
-
-#prova[is.na(prova$energy_cons_change_twh),]$energy_consumption
-
-#View(prova[is.na(prova$coal_share_elec),c("country","year","coal_share_elec")])
-#View(prova[!(is.na(prova$coal_share_elec)|prova$coal_share_elec==0),c("country","year","coal_share_elec")])
-
-#count NA by year
-
-#nacount = prova %>%
-#  group_by(year) %>%
-#  summarize(na_perc = sum(is.na(particulate_pollution))/n())
-#plot(nacount)
-#colnames(prova)
-
-#correlation plot
-cor_prova = cor(prova[,4:46], use="pairwise.complete.obs")
-corrplot(cor_prova, method="color", tl.cex = .2)
-
-summary(prova)
-colnames(prova)
-p=prova
-#filter p by tag
-#p=p[p$tag=="developed",]
-p=p[complete.cases(p),]
-
+mainlogm=mainlogm[complete.cases(mainlogm),]
 
 #normalizing columns
 normalize <- function(x) {
   return((x- min(x)) /(max(x)-min(x)))
 }
 
+#applying logit to normalized column
+logify <- function(x){
+  return(qlogis((x/1.00001)+0.000005))
+}
+
 normcols=c(4:46)
-# year-wise normalization
-#for (i in unique(p$year)){
-#  p[p$year==i,normcols] <- lapply(p[p$year==i,normcols], normalize)
-#}
-#overall normalization
-p[normcols] <- lapply(p[normcols], normalize)
 
-#normalize year
-p["year"] <- lapply(p["year"], normalize)
-
-#### chosing dep and indep variables without using tag as dummy variable ####
-objective = "low_carbon_share_elec"
-dependent = colnames(p)[c(2,4,37,38,39,41,42,43,44,45,46)]
-dependent = colnames(p)[c(2,4,6,14,18,23,25,28,33,35,37,38,39,41,42,43,44,45,46)]
-
-#### Stepwise LM ####
-#custom formula
-#my_formula <- as.formula(
-#  paste(paste(objective), " ~ ", paste(dependent, collapse = " + ")))
-my_formula <- as.formula(
-  paste("qlogis((", paste(objective), "/1.00001)+0.000005) ~ ", paste(dependent, collapse = " + ")))
-#my_formula <- as.formula(
-#  paste(paste(objective), " ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
-#my_formula <- as.formula(
-#  paste("qlogis((", paste(objective), "/1.00001)+0.000005) ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
-my_formula
+#### chosing dep and indep variables with or without electricity source and tag dummy, normalize and apply logit to column ####
+dependent = "carbon_intensity_elec"
+Bindepsource = FALSE
+Btag = TRUE
+Byearwise = TRUE
+Blogify=TRUE
 
 
-#creating model
-model <- lm(my_formula, p)
-summary(model)
-step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(p)))
-summary(step_model)
-#visualization of residuals
-step_resid=resid(step_model)
-#plot(p$gdp, step_resid, 
-#     ylab="Residuals", 
-#     main="Residuals plot") 
-#abline(0, 0)
-qqnorm(step_resid)
-qqline(step_resid)
-plot(fitted(step_model),step_resid)
-hist(step_resid)
-hist(p[,objective])
-hist(plogis(fitted(step_model)))
-hist(qlogis((p[,objective]/1.00001)+0.000005))
-hist(fitted(step_model))
-
-#### Setup for Lasso and Ridge ####
-#y = p[,objective]
-y = qlogis((p[,objective]/1.00001)+0.000005)
-x = data.matrix(select(p,dependent))
-#x = cbind(data.matrix(select(p,dependent)),data.matrix(select(p,dependent)^2))
-#colnames(x)<-c(colnames(select(p,dependent)),paste(colnames(select(p,dependent)),"^2"))
-
-#### Lasso ####
-lasso <- glmnet(x, y, alpha = 1)
-plot(lasso, xvar = "lambda", label=TRUE)
-
-#perform k-fold cross-validation to find optimal lambda value
-cv_model <- cv.glmnet(x, y, alpha = 1)
-
-#find optimal lambda value that minimizes test MSE
-best_lambda <- cv_model$lambda.min
-best_lambda
-
-#produce plot of test MSE by lambda value
-plot(cv_model)
-
-#analyze best model
-best_lasso <- glmnet(x, y, alpha = 1, lambda = best_lambda)
-coef(best_lasso)
-print(best_lasso)
-
-#### Ridge ####
-ridge <- glmnet(x, y, alpha = 0)
-plot(ridge, xvar="dev", label=TRUE)
-
-#perform k-fold cross-validation to find optimal lambda value
-cv_model <- cv.glmnet(x, y, alpha = 0)
-
-#find optimal lambda value that minimizes test MSE
-best_lambda <- cv_model$lambda.min
-best_lambda
-
-#produce plot of test MSE by lambda value
-plot(cv_model)
-
-#analyze best model
-best_ridge <- glmnet(x, y, alpha = 0, lambda = best_lambda)
-coef(best_ridge)
-print(best_ridge)
-
-
-
-#### chosing indep variables using tag as dummy variable ####
-dependent = colnames(p)[c(2,4,37,38,39,41,42,43,44,45,46,47)]
-dependent = colnames(p)[c(2,4,6,14,18,23,25,28,33,35,37,38,39,41,42,43,44,45,46,47)]
-
-#### Stepwise LM ####
-#custom formula
-my_formula <- as.formula(
-  paste(paste(objective), " ~ ", paste(dependent, collapse = " + ")))
-#my_formula <- as.formula(
-#  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + ")))
-#my_formula <- as.formula(
-#  paste(paste(objective), " ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
-#my_formula <- as.formula(
-#  paste("qlogis((", paste(objective), "/100.001)+0.000005) ~ ", paste(dependent, collapse = " + "), " + I(",  paste(dependent, collapse = "^2) + I("), "^2)"))
-my_formula
-
-
-#creating model
-model <- lm(my_formula, p)
-summary(model)
-step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(p)))
-summary(step_model)
-#visualization of residuals
-step_resid=resid(step_model)
-#plot(p$gdp, step_resid, 
-#     ylab="Residuals", 
-#     main="Residuals plot") 
-#abline(0, 0)
-qqnorm(step_resid)
-qqline(step_resid)
+selectvar_nl <- function(Bi=Bindepsource, Bt=Btag, By=Byearwise, Bl=Blogify, mlm=mainlogm){
+  if (By){
+    #year-wise normalization
+    for (i in unique(mlm$year)){
+      mlm[mlm$year==i,normcols] <- lapply(mlm[mlm$year==i,normcols], normalize)
+    }
+  } else {
+    #overall normalization
+    mlm[normcols] <- lapply(mlm[normcols], normalize)
+  }
+  #normalize year
+  mlm["year"] <- lapply(mlm["year"], normalize)
+  
+  if (Bl){
+    if(By){
+      #year-wise logify
+      for (i in unique(mlm$year)){
+        mlm[mlm$year==i,normcols] <- lapply(mlm[mlm$year==i,normcols], logify)
+      }
+    } else {
+      #overall logify
+      mlm[normcols] <- lapply(mlm[normcols], logify)
+    }
+    #logify year
+    mlm["year"] <- lapply(mlm["year"], logify)
+  }
+  
+  if (Bi){
+    independent = colnames(mlm)[c(2,4,6,14,18,23,25,28,33,35,37,38,39,41,42,43,44,45,46)]
+  } else {
+    independent = colnames(mlm)[c(2,4,37,38,39,41,42,43,44,45,46)]
+  }
+  if (Bt){
+    independent = append(independent, colnames(mlm[47]))
+  }
+  return(list("mlm"=mlm, "ind"=independent))
+}
+tmp = selectvar_nl()
+model_data = tmp$mlm
+independent = tmp$ind
 
 #### Setup for Lasso and Ridge ####
-#y = p[,objective]
-y = qlogis((p[,objective]/1.00001)+0.000005)
-x = data.matrix(select(p,dependent))
-#x = cbind(data.matrix(select(p,dependent)),data.matrix(select(p,dependent)^2))
-#colnames(x)<-c(colnames(select(p,dependent)),paste(colnames(select(p,dependent)),"^2"))
 
-#### Lasso ####
-lasso <- glmnet(x, y, alpha = 1)
-plot(lasso, xvar = "lambda", label=TRUE)
+setup_lr = function(mlm=model_data, dep=dependent, ind=independent, Bt=Btag){
+  y = mlm[,dep]
+  if (Bt){
+    x = data.matrix(select(mlm,c(head(ind,-1),tail(colnames(mlm),6))))
+  } else {
+    x = data.matrix(select(mlm,ind))
+  }
+  return(list("y"=y, "x"=x))
+}
 
-#perform k-fold cross-validation to find optimal lambda value
-cv_model <- cv.glmnet(x, y, alpha = 1)
+rs_models = function(mlm=model_data, dep=dependent, ind=independent, Bt=Btag){
+  my_formula <- as.formula(paste(paste(dep), " ~ ", paste(ind, collapse = " + ")))
+  model <- lm(my_formula, mlm)
+  step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(mainlogm)))
+  xy = setup_lr(mlm, dep, ind, Bt)
+  x = xy$x
+  y = xy$y
+  cv_model = cv.glmnet(x, y, alpha = 1)
+  best_lasso = glmnet(x, y, alpha = 1, lambda = cv_model$lambda.min)
+  cv_model = cv.glmnet(x, y, alpha = 0)
+  best_ridge = glmnet(x, y, alpha = 0, lambda = cv_model$lambda.min)
+  names_coeff_lasso = dimnames(coef(best_lasso))[[1]][which(coef(best_lasso) != 0)]
+  names_coeff_ridge = dimnames(coef(best_ridge))[[1]][which(coef(best_ridge) != 0)]
+  values_coeff_lasso = coef(best_lasso)[which(coef(best_lasso) != 0)]
+  values_coeff_ridge = coef(best_ridge)[which(coef(best_ridge) != 0)]
+  coeff_lasso = setNames(values_coeff_lasso, names_coeff_lasso)
+  coeff_ridge = setNames(values_coeff_ridge, names_coeff_ridge)
+  coeff_lm = model$coefficients
+  coeff_sm = step_model$coefficients
+  rsq = c(summary(model)$r.squared, summary(step_model)$r.squared, best_lasso$dev.ratio, best_ridge$dev.ratio)
+  return(list("rs" = setNames(rsq, c("lm","sm","lasso","ridge")),
+              "coeff_lm" = coeff_lm[order(-abs(sapply(coeff_lm,'[[',1)))],
+              "coeff_sm" = coeff_sm[order(-abs(sapply(coeff_sm,'[[',1)))],
+              "coeff_lasso" = coeff_lasso[order(-abs(sapply(coeff_lasso,'[[',1)))],
+              "coeff_ridge" = coeff_ridge[order(-abs(sapply(coeff_ridge,'[[',1)))]))
+}
 
-#find optimal lambda value that minimizes test MSE
-best_lambda <- cv_model$lambda.min
-best_lambda
+do_models <- function(depen = dependent){
+  dependent = depen
+  
+  results_df <- data.frame(Bindepsource = logical(), Btag = logical(),
+                           Byearwise = logical(), Blogify = logical(),
+                           lm = numeric(), sm = numeric(),
+                           lasso = numeric(), ridge = numeric())
+  
+  for (i in c(TRUE, FALSE)) {
+    for (j in c(TRUE, FALSE)) {
+      for (k in c(TRUE, FALSE)) {
+        for (l in c(TRUE, FALSE)) {
+          tmp = selectvar_nl(Bi=i, Bt=j, By=k, Bl=l)
+          model_data = tmp$mlm
+          independent = tmp$ind
+          results = rs_models(mlm=model_data, dep=dependent, ind=independent, Bt=j)
+          results_df <- rbind(results_df, data.frame(Bindepsource = i,
+                                                     Btag = j,
+                                                     Byearwise = k,
+                                                     Blogify = l,
+                                                     lm = results$rs['lm'],
+                                                     sm = results$rs['sm'],
+                                                     lasso = results$rs['lasso'],
+                                                     ridge = results$rs['ridge']))
+        }
+      }
+    }
+  }
+  
+  max_row <- results_df[which.max(results_df$sm), ]
+  
+  max_row_nind <- results_df[which.max(results_df[9:16,]$sm)+8, ]
+  
+  tmp = selectvar_nl(Bi=max_row$Bindepsource, Bt=max_row$Btag,
+                     By=max_row$Byearwise, Bl=max_row$Blogify)
+  model_data = tmp$mlm
+  independent = tmp$ind
+  results = rs_models(mlm=model_data, dep=dependent,
+                      ind=independent, Bt=max_row$Btag)
+  
+  tmp = selectvar_nl(Bi=max_row_nind$Bindepsource, Bt=max_row_nind$Btag,
+                     By=max_row_nind$Byearwise, Bl=max_row_nind$Blogify)
+  model_data = tmp$mlm
+  independent = tmp$ind
+  results_nind = rs_models(mlm=model_data, dep=dependent,
+                           ind=independent, Bt=max_row_nind$Btag)
+  
+  print(paste("Model for the variable:", dependent))
+  print("Best performing models:")
+  print(max_row)
+  print("Coefficients for best stepwise lm:")
+  print(results$coeff_sm)
+  print("Best performing models with only external data:")
+  print(max_row_nind)
+  print("Coefficients for best stepwise lm with only external data:")
+  print(results_nind$coeff_sm)
+  print("Performance on all models:")
+  print(results_df)
+  
+}
 
-#produce plot of test MSE by lambda value
-plot(cv_model)
 
-#analyze best model
-best_lasso <- glmnet(x, y, alpha = 1, lambda = best_lambda)
-coef(best_lasso)
-print(best_lasso)
-
-#### Ridge ####
-ridge <- glmnet(x, y, alpha = 0)
-plot(ridge, xvar="dev", label=TRUE)
-
-#perform k-fold cross-validation to find optimal lambda value
-cv_model <- cv.glmnet(x, y, alpha = 0)
-
-#find optimal lambda value that minimizes test MSE
-best_lambda <- cv_model$lambda.min
-best_lambda
-
-#produce plot of test MSE by lambda value
-plot(cv_model)
-
-#analyze best model
-best_ridge <- glmnet(x, y, alpha = 0, lambda = best_lambda)
-coef(best_ridge)
-print(best_ridge)
+do_models(depen="carbon_intensity_elec")
+do_models(depen="greenhouse_gas_emissions")
+do_models(depen="fossil_share_elec")
+do_models(depen="hydro_share_elec")
+do_models(depen="solar_share_elec")
+do_models(depen="wind_share_elec")
+do_models(depen="other_renewables_share_elec")
+do_models(depen="renewables_share_elec")
+do_models(depen="nuclear_share_elec")
+do_models(depen="low_carbon_share_elec")

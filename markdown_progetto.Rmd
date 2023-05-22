@@ -1,6 +1,6 @@
 ---
-title: ""
-author: ""
+title: ''
+author: ''
 output:
   pdf_document: default
 ---
@@ -55,6 +55,7 @@ library(rworldmap)
  library(glmnet) #To check if it's necessary
 library(readxl)
 library(gridExtra)
+library(corrplot)
 library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 options(dplyr.summarise.inform = FALSE)
@@ -149,13 +150,21 @@ join_owid = function(main_data, secondary_dataset_link){
   return(main_data)
 }
 
-# Import and merging of OWID variables, except of air pollution
+# Import and merging of OWID variables country area, HDI and urbanization rate
 main = join_owid(main, "datasets//country_areas.csv")
-main = join_owid(main, "datasets//share_of_land_area_used_for_agriculture.csv")
-main = join_owid(main, "datasets//urbanization_rate.csv")
 main = join_owid(main, "datasets//human_development_index.csv")
-main = join_owid(main, "datasets//oil_proved_reserves.csv")
-main = join_owid(main, "datasets//natural_gas_proved_reserves.csv")
+main = join_owid(main, "datasets//urbanization_rate.csv")
+
+# Import, selection and merging of deaths from air pollution
+ death_rates = read.csv("datasets//death_rates_from_air_pollution.csv")[, c(2,3,5)]
+ colnames(death_rates) = c("Code", "Year", "particulate_pollution")
+ main = left_join(main, death_rates,
+                  by = c("iso_code" = "Code", "year" = "Year"))
+rm(death_rates)
+
+# Import and merging share of land for for agricultural use
+main = join_owid(main, "datasets//share_of_land_area_used_for_agriculture.csv")
+
 
 # Import, filtering and merging of coal proved reserves
 coal_res = read.csv("datasets//coal_proved_reserves.csv")
@@ -165,6 +174,9 @@ main = left_join(main, select(coal_res, -c("Entity","Year")),
                  by = c("iso_code" = "Code"))
 rm(coal_res)
 
+# Import and merging oil proved reserves
+main = join_owid(main, "datasets//oil_proved_reserves.csv")
+
 # Import and merging of uranium reserves
 uranium_res = read.csv("datasets//uranium_proved_reserves.txt", sep = "\t")
 colnames(uranium_res) = c("V1","V2", "uranium_reserves_2019", "V4")
@@ -173,6 +185,9 @@ uranium_res$V1 = sub(".","",uranium_res$V1)
 main = left_join(main, select(uranium_res, -c("V2", "V4")),
                  by = c("country" = "V1"))
 rm(uranium_res)
+
+# Import and merging natural gas proved reserves
+main = join_owid(main, "datasets//natural_gas_proved_reserves.csv")
 
 # Import the GDP dataset
 gdp = read_excel("datasets//gdp_constant_2015_dollars.xlsx")[,4:66]
@@ -184,12 +199,6 @@ gdp$year = as.integer(gdp$year)
 main = left_join(main, gdp, by = c("iso_code" = "code", "year" = "year"))
 rm(gdp)
 
-# Import, selection and merging of deaths from air pollution
- death_rates = read.csv("datasets//death_rates_from_air_pollution.csv")[, c(2,3,5)]
- colnames(death_rates) = c("Code", "Year", "particulate_pollution")
- main = left_join(main, death_rates,
-                  by = c("iso_code" = "Code", "year" = "Year"))
-rm(death_rates)
 
 ```
 \newpage
@@ -204,6 +213,7 @@ In this section, we present the pre-processing activities performed.
 2. **Feature selection**, computed over the *Energy dataset*. From the original 129 variables, we kept only 36 relevant for the analyses.
 3. **Feature renaming**, computed over *main*, as the features merged to the *Energy dataset* have inconvenient names.
 4. **Feature addition**, computed over *main* in paragraph 4.3. The new categorical variable groups the world countries into six macroregions.
+4. **Cleaning NA and 0 values**, with the substitution of NA for reserves data to 0 and of '..' to NA for GDP
 
 
 ```{r data_preproc, include=TRUE, warning = FALSE}
@@ -262,18 +272,205 @@ main = select(main, -c("gdp.x", "biofuel_cons_change_pct",
                        "oil_energy_per_capita"))
 
 # 3. Feature renaming
-colnames(main) = c(colnames(main[,1:36]), "land_area", "agri_land_rate",
-                   "urbaniz_rate", "hdi", "oil_reserves_2020", "gas_reserves",
-                   "coal_reserves_2021", "uranium_reserves_2019", "gdp",
-                   "particulate_pollution")
+colnames(main) = c(colnames(main[,1:36]), "land_area", "hdi", "urbaniz_rate",
+                           "particulate_pollution", "agri_land_rate",
+                           "coal_reserves_2021", "oil_reserves_2020",
+                           "uranium_reserves_2019","gas_reserves", "gdp")
+
+# 4. Cleaning NA and 0 values
+main = main %>% mutate(
+  oil_reserves_2020 = coalesce(oil_reserves_2020, 0),
+  uranium_reserves_2019 = coalesce(uranium_reserves_2019, 0),
+  gas_reserves = coalesce(gas_reserves, 0),
+  coal_reserves_2021 = coalesce(coal_reserves_2021, 0))
+
+main = mutate(main, gdp = na_if(gdp, ".."))
+main$gdp = as.numeric(main$gdp)
 
 ```
 \newpage
 
 # Chapter 3
 # Exploratory analyses
+### 3.1 Global exploratory analyses
+The first step of exploratory analysis will be getting the summary of our dataset and describe each feature.
 
-To fill.........................
+```{r explorative_1, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+summary(main)
+```
+
+Each unit represent a country in a given year, the dataset has two character variables, country and ISO code, and 45 numerical variables.
+
+Of these 45, 10 are the ones presented in the data obtaining step, while the other 35 belong to the initial energy dataset and are the following:
+
+- **Year** and **Population**;
+- Pollution measurements: **Carbon intensity of electricity** (which measures how many grams of CO2 are release to produce a kWh of electricity) and **Greenhouse gas emissions**;
+- Overall energy and electricity measurements: **Electricity demand** (which is the amount of electricity consumed), **Electricity generation** (the amount of electricity produced), **Energy consumption change in tWh** (change in energy consumed compared to the previous year), **Net electricity imports** (electricity imported minus electricity exported for the country) and **Primary energy consumption** (Energy consumed by the country);
+- Variables related to electricity consumption and production for each source: renewables, that are divided in hydro, solar, wind, other renewables; fossil, divided in coal, oil and gas; and finally low carbon, which is the aggregation of renewables with nuclear. For each source the dataset presents a variable for **electricity production** and **share of electricity production**, and for each single fossil source the **production** is also present.
+
+The following is the distribution of units by Year:
+```{r explorative_2, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+ggplot(main, aes(x = year)) + geom_histogram(bins = 123) + ggtitle(paste("year distribution"))
+```
+
+### 3.2 Variable transformation
+Then we can explore more in depth each variable by plotting their distribution and, since for some years the dataset is very sparse, by viewing the percentage of NA values for each variables, by Year.
+
+However, as it could already be noticed in the summaries, the data is very skewed and has many outliers, as can be seen by plotting for Population.
+```{r explorative_3, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+i=4
+i1 <- colnames(main)[i]
+p11 <- ggplot(main, aes_string(x = i1)) + geom_histogram(bins = 100) + ggtitle(paste(i1, " distribution"))
+nacount = main %>%
+  group_by(year) %>%
+  summarize(na_perc = sum(is.na(!!sym(i1)))/n())
+p12 <- ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) + ggtitle("NA% by Year")
+grid.arrange(p11, p12, widths = c(0.6, 0.4), ncol = 2)
+```
+
+Therefore we decided to transform data for exploratory analysis, first by dividing to all variables, except HDI, not representing a share (e.g. hydro share of electricity, urbanization rate) by the population (as millions of inhabitants), then by applying a logarithm transformation to population, land area, GDP and the four reserves variables.
+Also, we create a subset of our dataset containing data from a single year, 2016.
+```{r explorative_4, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+# analisi con logaritmi e procapite(million)
+cols_pc <- c(6,7,9,10,11,12,14,15,17,18,20,22,23,25,26,28,29,30,31,33,35,37,42,43,44,45,46)
+cols_log <- c(4, 37, 42, 43, 44, 45, 46)
+
+mainlog <- main %>% mutate(across(all_of(cols_pc), .fns = ~.*1000000/population))
+mainlog <- mainlog %>% mutate(across(all_of(c(cols_log)), .fns = ~ log(.+1)))
+
+#single year visualization, 2016
+mainlog2016 = mainlog[mainlog$year==2016,]
+```
+
+
+### 3.3 Plotting function and division in groups
+As we have many variables, we write a function to plot for a given variable it's distribution, it's distribution only for the year 2016, and it's NA percentage by Year; the function also prints the three countries with the highest measurement for the variable in 2016.
+```{r explorative_5, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+do_plots = function(i){
+  i1 = colnames(mainlog)[i]
+  x_min <- min(mainlog[i1], na.rm=TRUE)
+  x_max <- max(mainlog[i1], na.rm=TRUE)
+  x_diff <- x_max-x_min
+  p11 = ggplot(mainlog, aes_string(x = i1)) + geom_histogram(bins = 25) + ggtitle(paste(i1, " distribution")) + xlim(x_min-x_diff/25, x_max+x_diff/25)
+  p12 = ggplot(mainlog2016, aes_string(x = i1)) + geom_histogram(bins = 25) + ggtitle("2016 distribution") + xlim(x_min-x_diff/25, x_max+x_diff/25)
+  nacount = mainlog %>%
+    group_by(year) %>%
+    summarize(na_perc = sum(is.na(!!sym(i1)))/n())
+  p13 = ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) + ggtitle("NA% by Year")
+  grid.arrange(p11, p12, p13, widths = c(3,3,2), ncol = 3)
+  i1_ord = mainlog2016[order(mainlog2016[i1], decreasing=TRUE),1]
+  print(paste("Top three countries in 2016 for",i1,":", i1_ord[1], ",", i1_ord[2], ",", i1_ord[3]))
+}
+```
+
+We can plot again for Population, and we can now see population has a log-normal distribution, for 2016 it is similarly distributed, with an overall shift to the right.
+```{r explorative_6, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+do_plots(4)
+```
+
+To make the exploration easier and more intuitive we divide variables in five groups, each containing:
+1. Variables pertaining to the reserves;
+2. Variables that regard low carbon sources;
+3. Variables regarding high carbon (fossil) sources;
+4. Other variables that belonged to the Energy dataset, which are variables in that dataset not about a specific source;
+5. Other variables that didn't belong to the Energy dataset.
+```{r explorative_7, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+other_measures = c(5,17,9,10,11,22,30)
+reserves = c(42,43,44,45)
+ext_measures = c(37,38,39,40,41,46)
+lowcarb = c(18,19,33,34,35,36,28,29,31,32,23,24,20,21)
+highcarb = c(6,7,8,14,15,16,25,26,27,12,13)
+```
+
+Now we'll plot using the function we created for each group, and we'll also plot the correlation between variables inside each group.
+
+### 3.4 Analysis on Energy dataset non source specific
+First we observe the variables in the Energy dataset not specific to any source:
+```{r explorative_8, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+for (i in other_measures){
+  do_plots(i)
+}
+corrplot(cor(mainlog[,other_measures], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+corrplot(cor(mainlog2016[,other_measures], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+```
+
+From the NA% plot we can notice that some variables are only recorded since the year 2000, which is an important consideration especially when we will build the models.
+
+There is a noticeable difference between **carbon intensity of electricity** and **greenhouse gas emissions** (even tho the two have a slight positive correlation) the first one has a distribution similar to a gaussian, with left skewing, while the second looks more like a log-gaussian, but the most important difference can be noticed in the countries with the highest measurements: carbon intensity in fact measures only the CO2 pollution from electricity, with some small countries being the highest pollutors (for each kWh), with these countries probably fully relying on coal for electricity production; greenhouse gas emissions instead consider the emissions made during energy generation, so it considers also primary energy, the contries with the highest scores are oil producers from middle east.
+Also **Primary energy consumption** is correlated to greenhouse gas emissions, but not to carbon intensity of electricity.
+
+The countries with highest **electricity demands and generation** (two measurements that are almost collinear, as expected), are, apparently, rich countries that are either very cold or very hot.
+
+### 3.5 Analysis on Energy dataset for fossil sources
+```{r explorative_9, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+for (i in highcarb){
+  do_plots(i)
+}
+corrplot(cor(mainlog[,highcarb], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+corrplot(cor(mainlog2016[,highcarb], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+```
+
+Moving on to fossil sources we can notice that **oil** overall is the most used source, but curiously oil **production** and **electricity** from oil are not correlated (and even have a negative correlation when considering share of electricity), while instead **coal** and **gas** have a strong correlation, meaning countries that use them tend to be producers, while the same can't be said for **oil**.
+
+Comparing the graphs with all years vs 2016 we can notice a very slight decrease overtime of use for all fossil sources.
+
+### 3.6 Analysis on Energy dataset for low carbon sources
+```{r explorative_10, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+for (i in lowcarb){
+  do_plots(i)
+}
+corrplot(cor(mainlog[,lowcarb], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+corrplot(cor(mainlog2016[,lowcarb], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+
+```
+
+For **low carbon sources**, again we see that most countries are sharing records only from year 2000 onwards.
+
+Electricity from low carbon sources is manly coming from **hydro**, with all other sources having distributions close to 0, with some big outliers, in fact hydro is almost collinear with overall electricity production and share for renewables and low carbo, this is because hydro is historically the most used renewable source, was extremely cheap when compared to the other low carbon sources, and also had a different purpose than electricity production.
+
+**Solar** and **Wind** are correlated, however the correlation has gotten weaker over time, this is probably due to the cost of the sources, which came down over the years, so it is feasible for more countries to invest in renewable sources and to do so in the one that best fits the country availability.
+
+### 3.7 Analysis on external reserves variables
+```{r explorative_11, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+for (i in reserves){
+  do_plots(i)
+}
+corrplot(cor(mainlog2016[,reserves], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+```
+
+The plots for reserves don't offer many insight other than the fact that most countries don't have reserves, the distribution between countries that have reserves is normal (after transformation); there also is correlation among the different types of reserves.
+
+### 3.8 Analysis on other external variables
+```{r explorative_12, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+for (i in ext_measures){
+  do_plots(i)
+}
+corrplot(cor(mainlog[,ext_measures], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+corrplot(cor(mainlog2016[,ext_measures], use="pairwise.complete.obs"), method="color", tl.cex = .5)
+
+```
+
+Other variables external from the Energy dataset all have a distribution similar to a gaussian (after the applied transformations).
+
+As expected **GDP** and **HDI** are strongly correlated, and urbanization rate also has a good correlation with those two variables, while all three are slightly negatively correlated to **land area** and **agricultural land rate**; **particulate pollution** is not correlated to any other variables.
+
+### 3.9 Inter-groups correlations
+```{r explorative_13, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
+subsetdf = mainlog[,c(2,other_measures,highcarb,lowcarb,reserves,ext_measures)] 
+subsetdf2016 = mainlog2016[,c(other_measures,highcarb,lowcarb,reserves,ext_measures)]
+
+corrplot(cor(subsetdf, use="pairwise.complete.obs"), method="color", tl.cex = .3)
+corrplot(cor(subsetdf2016, use="pairwise.complete.obs"), method="color", tl.cex = .3)
+```
+
+Finally we plot correlation among all variables, considering also year as one of those.
+**Year** only has a slight positive correlation with **solar** and **wind**, as already mentioned earlier, and a slight negative correlation with **coal**.
+
+Some noticeable correlations between variables in different groups are the obvious ones renewables (hydro) and fossil sources, and their correlation to variables measuring pollution.
+
+Similarly to the affirmation made earlier **coal** and **gas** **electricity** productions are correlated to their respective **reserves**, while **oil electricity** has a negative correlation to its **reserves**.
+
+**Nuclear** is slightly positively correlated to **uranium reserves**, but it is equally correlated to economic indices (**GDP**, **HDI**)
 
 \newpage
 
@@ -1076,9 +1273,305 @@ kable(place, caption = "Per capita reserves of fossil electricity sources")
 
 # Chapter 5
 # Modeling
+### 5.1 Initial data preparation for Modeling
+To build the models we start from preparing the data for it.
+
+We start by taking the dataset as transformed in the exploratory analysis (pro capite in million inhabitants and logarithm transformations), to this dataset we will add a column containing the **tag** variable, as done in the descriptive analysis, and also add dummy variables for it; we add both the variable and it's dummies because linear models and stepwise selection work with it (and for stepwise variable selection this way it either keeps all the modes of the variables or discards all), while instead for lasso and ridge models we need the variable as a dummy.
+
+We get a subset of the dataset containing only units that year variables between 2000 and 2019 (even if this passage might be redundant with the next), and then we get a subset that contains only complete cases of the dataset.
+
+```{r model_1, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+#adding tags here as well
+mainlog = cbind(mainlog, tag)
+mainlog = cbind(mainlog, model.matrix(~-1+tag, data=mainlog))
+#keep only years between 2000 and 2019
+mainlogm = mainlog[mainlog$year %in% 2000:2019,]
+
+mainlogm=mainlogm[complete.cases(mainlogm),]
+```
+
+### 5.2 Functions definition
+In order to make multiple models we approached the task by having the models being built using calls to functions, to make the code less repetitive.
+
+We define the first two functions, one that applies min-max normalization, and another that applies the logit function (slightly modified to avoid infinites, since our data goes from 0 to 1, including the extremes), and we define what columns we will later apply the functions to (in this case all numerical columns except **year**).
+
+```{r model_2, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+#normalizing columns
+normalize <- function(x) {
+  return((x- min(x)) /(max(x)-min(x)))
+}
+
+#applying logit to normalized column
+logify <- function(x){
+  return(qlogis((x/1.00001)+0.000005))
+}
+
+normcols=c(4:46)
+```
+
+In the next passage we define a the function selectvar_nl, it gets passed five arguments:
+
+- Bi, boolean value, identifies whether we want to include as independent variables in the model variables that are belong to the **Energy dataset** and regard specific energy sources;
+- Bt, boolean value, identifies whether we want to include the **tag** as independent variable in the model;
+- By, boolean value, identifies whether the functions defined above to normalize and apply the logit function over the column grouped by year, or on the whole column;
+- Bl, boolean value, identifies whether to apply the logit function or not (normalize is always applied);
+- mlm, the dataset to be transformed.
+
+The function returns a list with two items: the first is the modified dataset, the second contains a list with the names of the variables that will be used and independent variables in the model.
+
+```{r model_4, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+selectvar_nl <- function(Bi=Bindepsource, Bt=Btag, By=Byearwise, Bl=Blogify, mlm=mainlogm){
+  if (By){
+    #year-wise normalization
+    for (i in unique(mlm$year)){
+      mlm[mlm$year==i,normcols] <- lapply(mlm[mlm$year==i,normcols], normalize)
+    }
+  } else {
+    #overall normalization
+    mlm[normcols] <- lapply(mlm[normcols], normalize)
+  }
+  #normalize year
+  mlm["year"] <- lapply(mlm["year"], normalize)
+  
+  if (Bl){
+    if(By){
+      #year-wise logify
+      for (i in unique(mlm$year)){
+        mlm[mlm$year==i,normcols] <- lapply(mlm[mlm$year==i,normcols], logify)
+      }
+    } else {
+      #overall logify
+      mlm[normcols] <- lapply(mlm[normcols], logify)
+    }
+    #logify year
+    mlm["year"] <- lapply(mlm["year"], logify)
+  }
+  
+  if (Bi){
+    independent = colnames(mlm)[c(2,4,6,14,18,23,25,28,33,35,37,38,39,41,42,43,44,45,46)]
+  } else {
+    independent = colnames(mlm)[c(2,4,37,38,39,41,42,43,44,45,46)]
+  }
+  if (Bt){
+    independent = append(independent, colnames(mlm[47]))
+  }
+  return(list("mlm"=mlm, "ind"=independent))
+}
+```
+
+Next we define the function setup_lr, it has four arguments:
+
+- mlm, the dataset used for the model;
+- dep, the name of the dependent variable in the model;
+- ind, the list containing the names of the independent variables in the model;
+- Bt, boolean, whether the model should have **tag** as independent variable.
+
+The function returns a list of two elements, the first is the list of values for the dependent variable, the second is a matrix that contains the values of the variables used as independent variables (the transformation to matrix is needed to use the function that create lasso and ridge models).
+
+```{r model_5, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+#Setup for Lasso and Ridge
+setup_lr = function(mlm=model_data, dep=dependent, ind=independent, Bt=Btag){
+  y = mlm[,dep]
+  if (Bt){
+    x = data.matrix(select(mlm,c(head(ind,-1),tail(colnames(mlm),6))))
+  } else {
+    x = data.matrix(select(mlm,ind))
+  }
+  return(list("y"=y, "x"=x))
+}
+
+```
+
+Then we define the function rs_models, which gets as arguments as setup_lr.
+
+The function runs the linear model with the dependent and independent variables passed in the arguments, then performs a stepwise variables selection using, using BIC as criterion (k=log(n)).
+
+Subsequently it calls the function setup_lr to get the matrixes to run glmnet; it uses cross-validation to find the best lambda and then uses it to build the elastic-net models (lasso with alpha = 1, ridge with alpha=0).
+
+Finally the function returns a list of 5 values:
+
+- rs, a list that has the R squared for each of the models;
+- coeff_lm, list that contains the coefficients in the linear model;
+- coeff_sm, list that contains the coefficients in the linear model after stepwise variable selection;
+- coeff_lasso, list that contains the coefficients in the lasso model;
+- coeff_ridge, list that contains the coefficients in the ridge model.
+
+All the coefficients' variables are ordered by their descending absolute value
+
+```{r model_6, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+rs_models = function(mlm=model_data, dep=dependent, ind=independent, Bt=Btag){
+  my_formula <- as.formula(paste(paste(dep), " ~ ", paste(ind, collapse = " + ")))
+  model <- lm(my_formula, mlm)
+  step_model=step(model,direction=c("both"), trace=FALSE, k=log(nrow(mainlogm)))
+  xy = setup_lr(mlm, dep, ind, Bt)
+  x = xy$x
+  y = xy$y
+  cv_model = cv.glmnet(x, y, alpha = 1)
+  best_lasso = glmnet(x, y, alpha = 1, lambda = cv_model$lambda.min)
+  cv_model = cv.glmnet(x, y, alpha = 0)
+  best_ridge = glmnet(x, y, alpha = 0, lambda = cv_model$lambda.min)
+  names_coeff_lasso = dimnames(coef(best_lasso))[[1]][which(coef(best_lasso) != 0)]
+  names_coeff_ridge = dimnames(coef(best_ridge))[[1]][which(coef(best_ridge) != 0)]
+  values_coeff_lasso = coef(best_lasso)[which(coef(best_lasso) != 0)]
+  values_coeff_ridge = coef(best_ridge)[which(coef(best_ridge) != 0)]
+  coeff_lasso = setNames(values_coeff_lasso, names_coeff_lasso)
+  coeff_ridge = setNames(values_coeff_ridge, names_coeff_ridge)
+  coeff_lm = model$coefficients
+  coeff_sm = step_model$coefficients
+  rsq = c(summary(model)$r.squared, summary(step_model)$r.squared, best_lasso$dev.ratio, best_ridge$dev.ratio)
+  return(list("rs" = setNames(rsq, c("lm","sm","lasso","ridge")),
+              "coeff_lm" = coeff_lm[order(-abs(sapply(coeff_lm,'[[',1)))],
+              "coeff_sm" = coeff_sm[order(-abs(sapply(coeff_sm,'[[',1)))],
+              "coeff_lasso" = coeff_lasso[order(-abs(sapply(coeff_lasso,'[[',1)))],
+              "coeff_ridge" = coeff_ridge[order(-abs(sapply(coeff_ridge,'[[',1)))]))
+}
+```
+
+The last function defined is do_models.
+
+It only has one argument, depen, which is the name of the dependent variable we want to have in the model.
+
+The function build a dataframe with 8 columns, the first four are for the four boolean values used as arguments by selectvar_nl, the last four are the values returned by rs_models in the rs item (the R squared value for the four models).
+
+For each combination of True-False value possible with the four arguments of selectvar_nl the function calls select var and then calls rs_models giving as arguments the data and list of independent variables returned by selectvar_nl; the value are then inserted in the dataframe.
+
+The function then returns which arguments are to be passed to get the best models (to be precise the model with the best R squared for the linear with stepwise selection) and its scores, together with the coefficients of the stepwise selection model with such arguments.
+
+Then the same is returned again, but this time only considering the models that don't contain the energy source data as independent variables.
+
+Finally the whole dataframe is returned.
+
+This approach allows to compare the performance of all different models, to learn how to build the best model for the data.
+
+```{r model_7, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models <- function(depen = dependent){
+  dependent = depen
+  
+  results_df <- data.frame(Bindepsource = logical(), Btag = logical(),
+                           Byearwise = logical(), Blogify = logical(),
+                           lm = numeric(), sm = numeric(),
+                           lasso = numeric(), ridge = numeric())
+  
+  for (i in c(TRUE, FALSE)) {
+    for (j in c(TRUE, FALSE)) {
+      for (k in c(TRUE, FALSE)) {
+        for (l in c(TRUE, FALSE)) {
+          tmp = selectvar_nl(Bi=i, Bt=j, By=k, Bl=l)
+          model_data = tmp$mlm
+          independent = tmp$ind
+          results = rs_models(mlm=model_data, dep=dependent, ind=independent, Bt=j)
+          results_df <- rbind(results_df, data.frame(Bindepsource = i,
+                                                     Btag = j,
+                                                     Byearwise = k,
+                                                     Blogify = l,
+                                                     lm = results$rs['lm'],
+                                                     sm = results$rs['sm'],
+                                                     lasso = results$rs['lasso'],
+                                                     ridge = results$rs['ridge']))
+        }
+      }
+    }
+  }
+  
+  max_row <- results_df[which.max(results_df$sm), ]
+  
+  max_row_nind <- results_df[which.max(results_df[9:16,]$sm)+8, ]
+  
+  tmp = selectvar_nl(Bi=max_row$Bindepsource, Bt=max_row$Btag,
+                     By=max_row$Byearwise, Bl=max_row$Blogify)
+  model_data = tmp$mlm
+  independent = tmp$ind
+  results = rs_models(mlm=model_data, dep=dependent,
+                      ind=independent, Bt=max_row$Btag)
+  
+  tmp = selectvar_nl(Bi=max_row_nind$Bindepsource, Bt=max_row_nind$Btag,
+                     By=max_row_nind$Byearwise, Bl=max_row_nind$Blogify)
+  model_data = tmp$mlm
+  independent = tmp$ind
+  results_nind = rs_models(mlm=model_data, dep=dependent,
+                           ind=independent, Bt=max_row_nind$Btag)
+  
+  print(paste("Model for the variable:", dependent))
+  print("Best performing models:")
+  print(max_row)
+  print("Coefficients for best stepwise lm:")
+  print(results$coeff_sm)
+  print("Best performing models with only external data:")
+  print(max_row_nind)
+  print("Coefficients for best stepwise lm with only external data:")
+  print(results_nind$coeff_sm)
+  print("Performance on all models:")
+  print(results_df)
+   
+}
+```
+
+### 5.3 Obtaining Models
+The last step involves only calling the **do_models** function, passing it as argument the dependent variable for the model.
+
+The dependent variables that will be passed are 10, all are variables included in the initial **Energy dataset**, the first two are **carbon intensity of electricity** and **greenhouse gas emissions**, the other 8 are the share of electricity of fossil electricity and all the single low carbon electricity sources (and grouping as renewables and low carbon).
+
+#### 5.3.1 Carbon intensity of electricity
+```{r model_8, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="carbon_intensity_elec")
+```
 
 
+#### 5.3.2 Greenhouse gas emissions
+```{r model_9, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="greenhouse_gas_emissions")
+```
 
+
+#### 5.3.3 Fossil share of electricity
+```{r model_10, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="fossil_share_elec")
+```
+
+
+#### 5.3.4 Hydro share of electricity
+```{r model_11, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="hydro_share_elec")
+```
+
+
+#### 5.3.5 Solar share of electricity
+```{r model_12, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="solar_share_elec")
+```
+
+
+#### 5.3.6 Wind share of electricity
+```{r model_13, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="wind_share_elec")
+```
+
+
+#### 5.3.7 Other renewables share of electricity
+```{r model_14, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="other_renewables_share_elec")
+```
+
+
+#### 5.3.8 Renewables share of electricity
+```{r model_15, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="renewables_share_elec")
+```
+
+
+#### 5.3.9 Nuclear share of electricity
+```{r model_16, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="nuclear_share_elec")
+```
+
+
+#### 5.3.10 Low carbon share of electricity
+```{r model_17, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
+do_models(depen="low_carbon_share_elec")
+```
+
+
+\newpage
 # Sitography
 [1] https://github.com/owid/energy-data
 
