@@ -4,6 +4,14 @@ author: ''
 output:
   pdf_document: default
 ---
+```{r setup_suppression, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(dplyr.summarise.inform = FALSE)
+options(countrycode_warning = FALSE)
+options(dplyr.print_max = Inf)
+suppressMessages(library(ggplot2))
+suppressMessages(library(rworldmap))
+```
 
 \begin{center}
 
@@ -46,25 +54,6 @@ Academic Year 2022/2023
 
 \setcounter{page}{1}
 
-```{r setup, include=FALSE}
-library(dplyr)
-library(tidyr)
-library(ggplot2)
-library(viridis)
-library(rworldmap)
- library(glmnet) #To check if it's necessary
-library(readxl)
-library(gridExtra)
-library(corrplot)
-library(knitr)
-knitr::opts_chunk$set(echo = TRUE)
-options(dplyr.summarise.inform = FALSE)
-options(countrycode_warning = FALSE)
-options(dplyr.print_max = Inf)
-suppressMessages(library(ggplot2))
-suppressMessages(library(rworldmap))
-
-```
 \Large
 \textbf{Contents}
 
@@ -98,7 +87,8 @@ suppressMessages(library(rworldmap))
 \newpage
 
 # Abstract
-This report presents a comprehensive analysis of low-carbon electricity generation, focusing on its history, current trends, and future prospects.
+
+Given the escalating concerns surrounding climate change and the ever-increasing demand for electricity, the generation of low-carbon electricity has assumed utmost importance in curbing greenhouse gas emissions and fostering a cleaner and more sustainable future. This report presents a comprehensive analysis of low-carbon electricity generation, focusing on its history, current trends, and future prospects.
 
 The analysis begins by examining quantitatively the historical context of low-carbon electricity generation, tracing its origins and evolution over time and by proposing insights on different sources and world areas.
 
@@ -111,6 +101,21 @@ Parte di Giacomo
 # Chapter 1
 # Obtaining data
 We could not find a single dataset containing all the information of interest. Thus, the project's first step is merging multiple datasets into one. The primary one is the *Energy dataset* by Our World in Data (from now onwards referred to as "OWID") [1], which contains various time series for each world country regarding energy and electricity production and consumption.
+
+```{r setup, include=TRUE}
+# Import the libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(viridis)
+library(rworldmap)
+library(glmnet)
+library(readxl)
+library(gridExtra)
+library(corrplot)
+library(knitr)
+```
+
 
 ```{r obtain_energy, include=TRUE, warning = FALSE}
 
