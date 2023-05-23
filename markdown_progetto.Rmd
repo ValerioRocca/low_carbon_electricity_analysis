@@ -13,6 +13,8 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(rworldmap))
 ```
 
+\pagestyle{empty}
+
 \begin{center}
 
 \huge
@@ -52,46 +54,12 @@ Academic Year 2022/2023
 
 \newpage
 
-\setcounter{page}{1}
-
-\Large
-\textbf{Contents}
-
-\vspace{0.5cm}
-
-\small
-
-\begin{tabular}{l@{\hskip 27em}r}
-
-\textbf{Abstract} & \textbf{2} \\
-
-1. \textbf{Obtaining data} & \textbf{3} \\
-
-2. \textbf{Data pre-processing} & \textbf{X} \\
-
-3. \textbf{Exploratory analyses} & \textbf{X} \\
-\hspace{1em} 3.1 Global exploratory analyses & X \\
-\hspace{1em} 3.2 Variables transformation & X \\
-\hspace{1em} 3.3 Plotting function and division in groups & X \\
-\hspace{1em} 3.4 Analysis on groups of variables & X \\
-
-4. \textbf{Descriptive analyses} & \textbf{X} \\
-\hspace{1em} 4.1 Global analyses & X \\
-\hspace{1em} 4.2 Analyses by source & X \\
-\hspace{1em} 4.3 Analyses by macroregion & X \\
-\hspace{1em} 4.4 Green Score with focus on the sources & X \\
-\hspace{1em} 4.5 Green Score with focus on the macroregions & X \\
-
-5. \textbf{Modeling} & \textbf{X} \\
-\hspace{1em} 5.1 Initial data preparation for Modeling & X \\
-\hspace{1em} 5.2 Functions definition & X \\
-\hspace{1em} 5.3 Obtaining Models & X \\
-
-\textbf{Sitography} & \textbf{X} \\
-
-\end{tabular}
+\tableofcontents
 
 \newpage
+
+\pagestyle{plain}
+\setcounter{page}{1}
 
 # Abstract
 
@@ -105,11 +73,10 @@ Finally, various models with different transformations on the data are proposed,
 
 \newpage
 
-# Chapter 1
-# Obtaining data
+# Chapter 1: Obtaining data
 We could not find a single dataset containing all the information of interest. Thus, the project's first step is merging multiple datasets into one. The primary one is the *Energy dataset* by Our World in Data (from now onwards referred to as "OWID") [1], which contains various time series for each world country regarding energy and electricity production and consumption.
 
-```{r setup, include=TRUE, echo = FALSE, results = FALSE}
+```{r setup, include=TRUE, results = FALSE, message=FALSE, warning=FALSE}
 # Import the libraries
 library(dplyr)
 library(tidyr)
@@ -216,8 +183,7 @@ rm(gdp)
 \newpage
 
 
-# Chapter 2
-# Data pre-processing
+# Chapter 2: Data pre-processing
 
 In this section, we present the pre-processing activities performed.
 
@@ -302,9 +268,8 @@ main$gdp = as.numeric(main$gdp)
 ```
 \newpage
 
-# Chapter 3
-# Exploratory analyses
-### 3.1 Global exploratory analyses
+# Chapter 3: Exploratory analyses
+## 3.1 Global exploratory analyses
 The first step of exploratory analysis is getting a summary of our dataset and describing each feature.
 
 ```{r explorative_1, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
@@ -325,7 +290,7 @@ The following is the distribution of units by Year:
 ggplot(main, aes(x = year)) + geom_histogram(bins = 123) + ggtitle(paste("year distribution"))
 ```
 
-### 3.2 Variable transformation
+## 3.2 Variable transformation
 Then we explore more in depth each variable by plotting its distribution and by viewing the share of NA values, since for some years the dataset is very sparse.
 
 However, as is already noticeable from the summaries, the data is very skewed and has many outliers. This is further shown by plotting for Population.
@@ -355,7 +320,7 @@ mainlog2016 = mainlog[mainlog$year==2016,]
 ```
 
 
-### 3.3 Plotting function and division in groups
+## 3.3 Plotting function and division in groups
 As we have many variables, we write a function to plot for a given variable it's distribution, it's distribution only for the year 2016, and it's NA percentage by Year; the function also prints the three countries with the highest measurement for the variable in 2016.
 ```{r explorative_5, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 do_plots = function(i){
@@ -363,12 +328,15 @@ do_plots = function(i){
   x_min <- min(mainlog[i1], na.rm=TRUE)
   x_max <- max(mainlog[i1], na.rm=TRUE)
   x_diff <- x_max-x_min
-  p11 = ggplot(mainlog, aes_string(x = i1)) + geom_histogram(bins = 25) + ggtitle(paste(i1, " distribution")) + xlim(x_min-x_diff/25, x_max+x_diff/25)
-  p12 = ggplot(mainlog2016, aes_string(x = i1)) + geom_histogram(bins = 25) + ggtitle("2016 distribution") + xlim(x_min-x_diff/25, x_max+x_diff/25)
+  p11 = ggplot(mainlog, aes_string(x = i1)) + geom_histogram(bins = 25) +
+    ggtitle(paste(i1, " distribution")) + xlim(x_min-x_diff/25, x_max+x_diff/25)
+  p12 = ggplot(mainlog2016, aes_string(x = i1)) + geom_histogram(bins = 25) +
+    ggtitle("2016 distribution") + xlim(x_min-x_diff/25, x_max+x_diff/25)
   nacount = mainlog %>%
     group_by(year) %>%
     summarize(na_perc = sum(is.na(!!sym(i1)))/n())
-  p13 = ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) + ggtitle("NA% by Year")
+  p13 = ggplot(nacount, aes(x = year, y = na_perc)) + geom_line() + ylim(0, 1) +
+    ggtitle("NA% by Year")
   grid.arrange(p11, p12, p13, widths = c(3,3,2), ncol = 3)
   i1_ord = mainlog2016[order(mainlog2016[i1], decreasing=TRUE),1]
   print(paste("Top three countries in 2016 for",i1,":", i1_ord[1], ",", i1_ord[2], ",", i1_ord[3]))
@@ -396,9 +364,12 @@ highcarb = c(6,7,8,14,15,16,25,26,27,12,13)
 
 Now we plot for each group using the function we created, and we also plot the correlation between variables inside each group.
 
-### 3.4 Analysis on groups of variables
-#### 3.4.1 Analysis on Energy dataset non source specific
+## 3.4 Analysis on groups of variables
+
+### 3.4.1 Analysis on Energy dataset non source specific
+
 First, we observe the variables in the Energy dataset not specific to any source:
+
 ```{r explorative_8, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in other_measures){
   do_plots(i)
@@ -414,7 +385,8 @@ Also **Primary energy consumption** is correlated to greenhouse gas emissions, b
 
 The countries with the highest **electricity demands and generation** (two measurements that are almost collinear, as expected) are rich countries that are either very cold or very hot.
 
-#### 3.4.2 Analysis on Energy dataset for fossil sources
+### 3.4.2 Analysis on Energy dataset for fossil sources
+
 ```{r explorative_9, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in highcarb){
   do_plots(i)
@@ -427,7 +399,7 @@ Moving on to fossil sources, we notice that **oil** overall is the most used sou
 
 Comparing the graphs with all years versus 2016, we can notice a very slight decrease over time of use for all fossil sources.
 
-#### 3.4.3 Analysis on Energy dataset for low carbon sources
+### 3.4.3 Analysis on Energy dataset for low carbon sources
 
 ```{r explorative_10, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in lowcarb){
@@ -444,7 +416,8 @@ Electricity from low carbon sources mainly comes from **hydro**, with all other 
 
 **Solar** and **Wind** are correlated; however, the correlation has gotten weaker over time, this is probably due to the cost of the sources, which came down over the years, so it is feasible for more countries to invest in renewable sources and to do so in the one that best fits the country availability.
 
-#### 3.4.4 Analysis on external reserves variables
+### 3.4.4 Analysis on external reserves variables
+
 ```{r explorative_11, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in reserves){
   do_plots(i)
@@ -452,9 +425,11 @@ for (i in reserves){
 corrplot(cor(mainlog2016[,reserves], use="pairwise.complete.obs"), method="color", tl.cex = .5)
 ```
 
-The plots for reserves do not offer much insight; here follows the main findings: most countries do not have reserves; after transformation, the distribution between countries that have reserves is normal; different types of reserves are correlated.
+Most countries have no reserves,however the distribution of reserves for the countries that do seem to be normally shaped (after transformations).
+A really interesting insight is that the different types of reserves are correlated between each others.
 
-#### 3.4.5 Analysis on other external variables
+### 3.4.5 Analysis on other external variables
+
 ```{r explorative_12, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 for (i in ext_measures){
   do_plots(i)
@@ -468,7 +443,8 @@ After being transformed, the variables external to the Energy dataset all have a
 
 As expected, **GDP** and **HDI** are strongly correlated; also, urbanization rate has a good correlation with those two variables; all three are slightly negatively correlated to **land area** and **agricultural land rate**. **Particulate pollution** is not correlated to any other variables.
 
-#### 3.4.6 Inter-groups correlations
+### 3.4.6 Inter-groups correlations
+
 ```{r explorative_13, fig.width=8, fig.height = 4,include=TRUE, warning = FALSE}
 subsetdf = mainlog[,c(2,other_measures,highcarb,lowcarb,reserves,ext_measures)] 
 subsetdf2016 = mainlog2016[,c(other_measures,highcarb,lowcarb,reserves,ext_measures)]
@@ -477,22 +453,21 @@ corrplot(cor(subsetdf, use="pairwise.complete.obs"), method="color", tl.cex = .3
 corrplot(cor(subsetdf2016, use="pairwise.complete.obs"), method="color", tl.cex = .3)
 ```
 
-Finally, we plot correlation among all variables, considering year as one of those. The main findings follow:
+Finally, we plot correlation among all variables, considering year as one of those. The main findings are the following:
 
-1. **Year** has a slightly positive correlation with **solar** and **wind**, as mentioned earlier, and a slight negative correlation with **coal**.
+1. **Year** has a slightly positive correlation with **solar** and **wind**, and a slight negative correlation with **coal**.
 
 2. Some noticeable correlations between variables in different groups are renewables (hydro) and fossil sources and their correlation to variables measuring pollution.
 
 3. **Coal** and **gas electricity** productions are correlated to their respective **reserves**, while **oil electricity** has a negative correlation to its **reserves**.
 
-4. **Nuclear** is slightly positively correlated to **uranium reserves**, but it is equally correlated to economic indices (**GDP**, **HDI**).
+4. **Nuclear** is slightly positively correlated to **uranium reserves**, but it is equally correlated to economic indexes (**GDP**, **HDI**).
 
 \newpage
 
-# Chapter 4
-# Descriptive analyses
+# Chapter 4: Descriptive analyses
 
-### 4.1 Global analyses
+## 4.1 Global analyses
 
 We start the descriptive analyses by looking at the global low-carbon electricity generation trends. By **low-carbon**, we refer to the electricity produced with substantially lower greenhouse gas emissions than conventional fossil fuel power generation [12]. In other words, the term low-carbon includes renewable and nuclear sources. We will now refer to it with the acronym **LC**.
 
@@ -587,7 +562,7 @@ kable(cbind(place[1:5,], place[6:10,]),caption = "Share of LC electricity genera
 ```
 Not surprisingly, the generation of electricity from LC sources is not homogeneous between the countries: China and the USA own 41% of the electricity generated in 2020; the nine nations with the highest electricity generation from LC sources account for 69%.
 
-### 4.2 Analyses by source
+## 4.2 Analyses by source
 
 ```{r descriptive_3, fig.width=8, fig.height = 10, include=TRUE, warning = FALSE}
 
@@ -703,7 +678,7 @@ The plots allow us to identify three different phases in the history of LC elect
 
 3. **Golden age of renewables** (from the mid-'00s to nowadays). Nuclear power generation declines and gives way to renewables. In particular, the solar and wind generation skyrockets.
 
-### 4.3 Analyses by macroregion
+## 4.3 Analyses by macroregion
 
 We are now interested in analyzing electricity generation by LC sources in different areas. To do so, we aggregate world countries into six macroregions based on geographical, economic, and cultural factors.
 
@@ -981,7 +956,7 @@ ggplot(place, aes(year, non_hydro_elec, color = ISO_code)) +
 
 ```
 
-### 4.4 Green Score with focus on the sources
+## 4.4 Green Score with focus on the sources
 
 In this section, we aim to study which countries are nearer to the full LC target (i.e., to produce from LC sources all the electricity they consume). To do so, we create a **Green Score**, defined as the following ratio:
 \[
@@ -997,9 +972,13 @@ Note that in paragraphs 4.4 and 4.5 analyses, we removed the countries with a sm
 # Scatterplot of the Green Score in 2020 in each country
 # Creation of the dataset
 place = filter(main, (year == 2020 & population > 500000 & iso_code != "REU")) %>%
-  transform(elec_demand_per_capita = (sqrt(electricity_demand / population) - min(sqrt(electricity_demand / population))) / (max(sqrt(electricity_demand / population)) - min(sqrt(electricity_demand / population))),
-         green_score_renew = renewables_electricity / electricity_demand,
-         green_score_lc = low_carbon_electricity / electricity_demand) %>%
+  transform(elec_demand_per_capita = (
+    sqrt(electricity_demand / population) -
+      min(sqrt(electricity_demand / population))) /
+      (max(sqrt(electricity_demand / population)) -
+         min(sqrt(electricity_demand / population))),
+    green_score_renew = renewables_electricity / electricity_demand,
+    green_score_lc = low_carbon_electricity / electricity_demand) %>%
   select(iso_code, elec_demand_per_capita, green_score_renew, green_score_lc)
 
 # Creation of the plot
@@ -1101,7 +1080,7 @@ ggplot(filter(place, iso_code != "LAO", iso_code != "BTN", iso_code != "PRY"),
 ```
 The plot confirms the correlation between the Green Score and the electricity generation from hydropower. It also shows an important link with nuclear power production but not with solar, wind, and other sources.
 
-### 4.5 Green Score with focus on the macroregions
+## 4.5 Green Score with focus on the macroregions
 
 In this final section of descriptive analyses, we focus on the analysis of the Green Score in each country.
 
@@ -1286,9 +1265,8 @@ kable(place, caption = "Per capita reserves of fossil electricity sources")
 ```
 \newpage
 
-# Chapter 5
-# Modeling
-### 5.1 Initial data preparation for Modeling
+# Chapter 5: Modeling
+## 5.1 Initial data preparation for Modeling
 To build the models, we start by preparing the data for it.
 
 We take the dataset transformed in the exploratory analysis (pro capita in million inhabitants and logarithm transformations). We add a column containing the **tag** variable to this dataset, as done in the descriptive analysis. This time we insert both the normal feature and a dummy version of it. The reason is that linear models and stepwise selection work with the first one, while lasso and ridge models need the second one.
@@ -1305,12 +1283,12 @@ mainlogm = mainlog[mainlog$year %in% 2000:2019,]
 mainlogm=mainlogm[complete.cases(mainlogm),]
 ```
 
-### 5.2 Functions definition
+## 5.2 Functions definition
 In order to make multiple models, we create tailored functions to make the code less repetitive.
 
-We define the first two of them: one applies min-max normalization; the other contains a modified version of the logit function, which avoids infinite values since our data lies in the interval [0,1]
+We first define two simple functions to transform the variables: one applies min-max normalization; the other contains the logit function, modified to avoids infinite values (since our data lies in the interval [0,1], 0 and 1 included)
 
-, and we define what columns we will later apply the functions to (in this case all numerical columns except **year**).
+We also define what columns we will later apply the functions to (in this case all numerical columns except **year**).
 
 ```{r model_2, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 #normalizing columns
@@ -1326,13 +1304,15 @@ logify <- function(x){
 normcols=c(4:46)
 ```
 
-In the following step, we define the function *selectvar_nl*, which allows us to select which columns to include in the model as independent variables. The arguments are all boolean except the last one:
+In the following step, we define the function *selectvar_nl*, which allows us to select which columns to include in the model as independent variables.
 
-- *Bi*, identifies whether we want to include *Energy dataset*'s variables which regard specific energy sources;
+The arguments are all boolean except the last one:
+
+- *Bi*, identifies whether we want to include *Energy dataset*'s variables which regard the specific energy sources electricity production;
 
 - *Bt*, identifies whether we want to include **tag**;
 
-- *By*, identifies whether the functions defined above to normalize and apply the logit function over the column grouped by year, or on the whole column;
+- *By*, identifies whether the functions defined above to normalize and apply the logit function is applied over the column grouped by year, or on the whole column;
 
 - *Bl*, identifies whether to apply the logit function or not (normalization is always applied);
 
@@ -1410,7 +1390,7 @@ setup_lr = function(mlm=model_data, dep=dependent, ind=independent, Bt=Btag){
 
 ```
 
-Then we define the function *rs_models*, which gets as arguments as *setup_lr*.
+Then we define the function *rs_models*, which gets the same arguments as *setup_lr*.
 
 The function runs the linear model with the dependent and independent variables passed in the arguments; then performs a stepwise variables selection using BIC as criterion (k=log(n)).
 
@@ -1418,7 +1398,7 @@ Subsequently, it calls the function *setup_lr* to get the matrices to run *glmne
 
 Finally, the function returns a list of 5 sub-lists:
 
-- *rs*, a list that has the R squared for each of the models;
+- *rs*, which contains the R squared of each model obtained (linear, stepwise, lasso, and ridge);
 
 - *coeff_lm*, which contains the coefficients in the linear model;
 
@@ -1450,7 +1430,8 @@ rs_models = function(mlm=model_data, dep=dependent, ind=independent, Bt=Btag){
   coeff_ridge = setNames(values_coeff_ridge, names_coeff_ridge)
   coeff_lm = model$coefficients
   coeff_sm = step_model$coefficients
-  rsq = c(summary(model)$r.squared, summary(step_model)$r.squared, best_lasso$dev.ratio, best_ridge$dev.ratio)
+  rsq = c(summary(model)$r.squared, summary(step_model)$r.squared,
+          best_lasso$dev.ratio, best_ridge$dev.ratio)
   return(list("rs" = setNames(rsq, c("lm","sm","lasso","ridge")),
               "coeff_lm" = coeff_lm[order(-abs(sapply(coeff_lm,'[[',1)))],
               "coeff_sm" = coeff_sm[order(-abs(sapply(coeff_sm,'[[',1)))],
@@ -1527,14 +1508,16 @@ do_models <- function(depen = dependent){
   print("")
   print(kable(as.data.frame(max_row), caption = "Best performing models"))
   print(kable(as.data.frame(results$coeff_sm), caption = "Coefficients for best stepwise lm"))
-  print(kable(as.data.frame(max_row_nind), caption = "Best performing models with only external data"))
-  print(kable(as.data.frame(results_nind$coeff_sm), caption = "Coefficients for best stepwise lm with only external data"))
+  print(kable(as.data.frame(max_row_nind),
+              caption = "Best performing models with only external data"))
+  print(kable(as.data.frame(results_nind$coeff_sm),
+              caption = "Coefficients for best stepwise lm with only external data"))
   print(kable(results_df, caption = "Performance on all models"))
    
 }
 ```
 
-### 5.3 Obtaining Models
+## 5.3 Obtaining Models
 The last step involves only calling the **do_models** function, passing the dependent variable.
 
 Ten dependent variables are passed, all included in the initial *Energy dataset*: *carbon intensity of electricity*, *greenhouse gas emissions*, *share of electricity of fossil electricity*, and the share of electricity of all low-carbon electricity sources.
@@ -1545,7 +1528,7 @@ It is crucial to notice also that, when applying the logit function, the numeric
 
 GDP and HDI, which are significantly correlated, often appear with similar but opposite coefficients, which indicates rich countries where investment in human development and freedom is not as high when GDP has a positive coefficient and HDI a negative one, and the opposite when GDP is negative and HDI positive.
 
-#### 5.3.1 Carbon intensity of electricity
+### 5.3.1 Carbon intensity of electricity
 ```{r model_8, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="carbon_intensity_elec")
 ```
@@ -1564,7 +1547,7 @@ Now population and land area have high negative coefficients, indicating that po
 
 The coefficients on the tags are different, with Eastern countries having a negative coefficient while middle-east has a positive coefficient. This also relates to the influence of population and land area above: Eastern European countries tend to be extensive and populated, while in the middle east; thus, we probably have outliers of small countries that pollute a lot due to oil production.
 
-#### 5.3.2 Greenhouse gas emissions
+### 5.3.2 Greenhouse gas emissions
 ```{r model_9, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="greenhouse_gas_emissions")
 ```
@@ -1579,7 +1562,7 @@ In this case, there is a significant influence of GDP with positive coefficients
 
 The tags are positive for the Middle East and Eastern Europe and negative for the others, especially Sub-Saharan Africa and developed countries.
 
-#### 5.3.3 Hydro share of electricity
+### 5.3.3 Hydro share of electricity
 ```{r model_11, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="hydro_share_elec")
 ```
@@ -1590,7 +1573,7 @@ In fact, the model excluding sources, land area, and population has negative coe
 
 In the model excluding source, we also have this time year included, with a small yet negative coefficient, indicating that the share of hydro in the electricity mix is getting lower each year if the other parameters are fixed.
 
-#### 5.3.4 Solar share of electricity
+### 5.3.4 Solar share of electricity
 ```{r model_12, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="solar_share_elec")
 ```
@@ -1601,7 +1584,7 @@ It is interesting to analyze the model excluding source, in which HDI, GDP, and 
 
 Here year appears with a noticeable weight, indicating that solar energy has quickly developed over the last two decades.
 
-#### 5.3.5 Wind share of electricity
+### 5.3.5 Wind share of electricity
 ```{r model_13, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="wind_share_elec")
 ```
@@ -1610,14 +1593,14 @@ Similarly, wind's share of electricity generation is mainly explained by the ele
 
 The model excluding sources has an R squared ~0.49 and behaves very similarly to solar share. The major difference is in the tag *sub-african*, which for obvious geographical reasons has a positive coefficient, yet here it has a negative one.
 
-#### 5.3.6 Other renewables share of electricity
+### 5.3.6 Other renewables share of electricity
 ```{r model_14, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="other_renewables_share_elec")
 ```
 
 Other renewables' behavior is also very similar to solar. However, in the model without sources (which has the lowest score of ~0.26, indicating it is hard to explain it with our variables), we now see a high coefficient for Latin America and Caribbeans instead, indicating that this measure is also highly related to local availability and geography.
 
-#### 5.3.7 Nuclear share of electricity
+### 5.3.7 Nuclear share of electricity
 ```{r model_16, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="nuclear_share_elec")
 ```
@@ -1633,7 +1616,7 @@ Year's variable is also present in this model, this time with a negative coeffic
 Uranium reserves have a positive coefficient, indicating they can be a reason to invest in nuclear energy. However, it is not very high, indicating it is not a main concern, probably because of the low amount of material needed to produce electricity from nuclear, which makes transporting the material a small cost without the need of building infrastructure for it.
 
 
-#### 5.3.8 Renewables, Low carbon and Fossil share of electricity
+### 5.3.8 Renewables, Low carbon and Fossil share of electricity
 ```{r model_15, fig.width=8, fig.height = 4, include=TRUE, warning = FALSE}
 do_models(depen="renewables_share_elec")
 ```
@@ -1644,9 +1627,9 @@ do_models(depen="low_carbon_share_elec")
 do_models(depen="fossil_share_elec")
 ```
 
-Renewables, low carbon and fossil are group, as the last two indicate opposite measurements, and we have seen that low carbon and renewables are very similar, due to the small impact of nuclear in the mix.
+Renewables, low carbon and fossil are grouped, since the share of low carbon is equal to 1 minuts the share of fossil, and low carbon and renewables' shares are very similar, due to the small impact of nuclear in the mix; the following statements regard the low carbon model: 
 
-The best model has R square of ~0.79, which is low with respect to our expectations, considering it has the variables for electricity from each source; it returns trivial coefficients, with a high impact of hydro (making up most of the renewable electricity) and also fossil fuel sources on the opposite end. GDP also has a high coefficient, and HDI is not in the model.
+The best model has R square of ~0.79, which is low with respect to our expectations, considering it has the variables for electricity from each source; it returns trivial coefficients, with a high impact of hydro (making up most of the low carbon electricity) and also fossil fuel sources on the opposite end. GDP also has a high coefficient, and HDI is not in the model.
 
 The model without sources only has an R squared of ~0.34, but is much more interesting, being highly impacted by population and land area, confirming that smaller countries are the ones that rely mostly on fossil fuels, probably because of smaller infrastructure investments and research costs.
 
