@@ -1,0 +1,5 @@
+"0","#adding tags here as well
+mainlog = cbind(mainlog, tag)
+"
+"2","Error in data.frame(..., check.names = FALSE) : object 'tag' not found
+"
