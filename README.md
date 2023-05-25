@@ -1,4 +1,4 @@
-# "Low-Carbon Electricity Generation: A Comprehensive Analysis"
+# Low-Carbon Electricity Generation: A Comprehensive Analysis
 
 Final project for the course of Statistical Learning, MSc Data Science at Unipd.
 
